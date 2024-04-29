@@ -17,15 +17,16 @@ public class Trainer
 }
 class Window extends Canvas
 {
-//	int width;
-//	int height;
-//	String name;
+	int width;
+	int height;
+	String name;
 	private static final long serialVersionUID = 1873648274892L;
 	public Window (int width, int height, String name, Board board, Color color)
 	{
 		JFrame frame = new JFrame(name);
-		width = 450;
-		height = 450;
+		height = (int)(Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.7);
+		System.out.println(this.height);
+		width = height;
 		frame.setPreferredSize(new Dimension(width+24, height+44)); 
 		frame.setMinimumSize(new Dimension(width+24, height+44));
 		frame.setMaximumSize(new Dimension(width+24, height+44));
@@ -405,26 +406,27 @@ class Menu extends Obj
 	{
 		if (!disp)
 		{
+			int dimension = (int)(Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.7);
 			g.setColor(Color.DARK_GRAY);
 			g.fillRect(0, 0, 1000, 1000);
 			g.setFont(new Font("Monospaced", Font.BOLD, 26));
 			g.setColor(Color.RED);
 			if (menuType != 3 && menuType != 4)
-				g.drawString("Ba"+Tile.getString()+"er", 10, 30);
+				g.drawString("Ba"+Tile.getString()+"er", (dimension/2)-205, 60);
 			if (menuType == 2)
 			{
 				barColor = barColor(barColor);
 				g.setColor(Color.BLACK); 
 				double fullness = (double)loads/160340;
-				g.fillRect(10, 183, 438, 81);
+				g.fillRect(10, (int)(dimension/2.5), dimension-12, dimension/5);
 				g.setColor(new Color(barColor[0], barColor[1], barColor[2]));
-				g.fillRect(10, 183, (int)(fullness*435), 81);
+				g.fillRect(10, (int)(dimension/2.5), (int)(fullness*(dimension-12)), dimension/5);
 			}
-			if (menuType == 3)
+			else if (menuType == 3)
 			{
 				g.setColor(Color.RED);
 				g.setFont(new Font("Monospaced", Font.BOLD, 60));
-				g.drawString("Game Over!", 56, 51);
+				g.drawString("Game Over!", (dimension/2)-167, 51);
 				int o = 0;
 				int i = 0;
 				int m = 0;
@@ -452,13 +454,13 @@ class Menu extends Obj
 				
 				g.setFont(new Font("Monospaced", Font.BOLD, 20));
 				g.setColor(Color.green);
-				g.drawString("Perfects : "+o, 10, 350);
+				g.drawString("Perfects : "+o, 10, 300);
 				g.setColor(Color.yellow);
-				g.drawString("Erratums : "+i, 10, 380);
+				g.drawString("Erratums : "+i, 10, 330);
 				g.setColor(Color.orange); 
-				g.drawString("Mistakes : "+m, 10, 410);
+				g.drawString("Mistakes : "+m, 10, 360);
 				g.setColor(Color.red);
-				g.drawString("Blunders : "+b, 10, 440);
+				g.drawString("Blunders : "+b, 10, 390);
 				if (tScore == 1)
 					g.setColor(Color.green);
 				if (tScore < 1)
@@ -472,7 +474,7 @@ class Menu extends Obj
 					output = String.format("Accuracy:%.4f%%.", tScore*100);
 				g.setFont(new Font("Monospaced", Font.BOLD, 20));
 				g.setFont(new Font("Monospaced", Font.BOLD, 40));
-				g.drawString(output, 5, 100);
+				g.drawString(output, (dimension/2)-213, 100);
 				
 
 				int[] rSpace = new int[9];
@@ -523,7 +525,7 @@ class Menu extends Obj
 				g.fillRect((int)(2.2*d+3), (int)(4.2*d), 3*d+7, 7);
 				g.fillRect((int)(2.2*d+3), (int)(5.2*d), 3*d+7, 7);
 			}
-			if (menuType == 4)
+			else if (menuType == 4)
 			{
 				review(g, analysis);
 			}
@@ -531,16 +533,18 @@ class Menu extends Obj
 	}
 	static public void review(Graphics g, ArrayList<Mistake> analysis)
 	{
+		int dimension = (int)(Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.7);
+//		System.out.println(analysis.size());
 		if (analysis.size()>0)
 		{
-			if (place++ < 5)
-				System.out.println(place);
+//			if (place+1 < 5)
+//				System.out.println(place);
 			int[] tSpace = Obj.interpret(analysis.get(reviewPage).getPos());
 			int[] rSpace = new int[9];
 //			Space.pArr(tSpace);
 //			System.out.println(1+reviewPage+"/"+Math.min(10, analysis.size()));
-			if (place++ < 5)
-				System.out.println(place);
+//			if (place+1 < 5)
+//				System.out.println(place);
 			for (int x = 0; x < 9; x++)
 			{
 				if (x < 6)
@@ -552,8 +556,8 @@ class Menu extends Obj
 				if (x == 8)
 					rSpace[x]=9;
 			}
-			if (place++ < 5)
-				System.out.println(place);
+//			if (place+1 < 5)
+//				System.out.println(place);
 			for (int x = 0; x < rSpace.length; x++)
 			{ // The pause error is in this loop somewhere
 				int val = rSpace[x];
@@ -593,18 +597,18 @@ class Menu extends Obj
 				g.setColor(Color.orange);
 				g.drawString("Move score: " + String.format("%.3f%%",100*analysis.get(reviewPage).getScore()),125,80);
 				} catch (Exception e) {System.out.println("You suck at something, who knows what");} */
-			} 
-			try {
+			}
+			try 
+			{
 				g.setColor(Color.RED);
-				g.drawString("Your move: "+analysis.get(reviewPage).getMove(), 133,20);
+				g.drawString("Your move: "+analysis.get(reviewPage).getMoveShort(), dimension/2-61,20);
 				g.setColor(Color.green);
-				g.drawString("Best move/moves: " + Input.getMove(analysis.get(reviewPage).getPos()).getBestMove() , 115, 50);
+				g.drawString("Best move/moves: " + Input.getMove(analysis.get(reviewPage).getPos()).getBestMoveShort() , dimension/2-102, 50);
 				g.setColor(Color.orange);
-				g.drawString("Move score: " + String.format("%.3f%%",100*analysis.get(reviewPage).getScore()),125,80);
-				} catch (Exception e) {System.out.println("You suck at something, who knows what");} 
-
-			if (place++ < 5)
-				System.out.println(place);
+				g.drawString("Move score: " + String.format("%.3f%%",100*analysis.get(reviewPage).getScore()),dimension/2-105,80);
+			} catch (Exception e) {System.out.println("You suck at something, who knows what");} 
+//			if (place+1 < 5)
+//				System.out.println(place);
 			int d = (int)Toolkit.getDefaultToolkit().getScreenSize().getWidth()/12;
 			g.setColor(new Color(121, 64, 25));
 			g.fillRect((int)(0.5*d+3), (int)(0.85*d), 7, (int)(3*d)+7);
@@ -785,7 +789,7 @@ class Input extends KeyAdapter
 		return moves.get(name);
 	}
 	int key;
-	public String namer(String line)
+	public static String namer(String line)
 	{
 		Scanner namerIn = new Scanner(line);
 		return namerIn.next();
@@ -1183,6 +1187,29 @@ class Move
 			ret = ret.substring(0,ret.indexOf(" "))+", "+ret.substring(ret.indexOf(" "));
 		return ret;
 	}
+	public String getBestMoveShort() 
+	{
+		double gScore = lScore;
+		String ret = "";
+		if (uScore > lScore)
+			gScore = uScore;
+		if (rScore > gScore)
+			gScore = rScore;
+		if (dScore > gScore)
+			gScore = dScore;
+		if (lScore == gScore)
+			ret+="L ";
+		if (rScore == gScore)
+			ret+="R ";
+		if (uScore == gScore)
+			ret+="U ";
+		if (dScore == gScore)
+			ret+="D ";
+		ret = ret.trim();
+		while (ret.indexOf(" ")!=-1)
+			ret = ret.substring(0,ret.indexOf(" "))+","+ret.substring(ret.indexOf(" ")+1);
+		return ret;
+	}
 	public String toString()
 	{
 		return ""+bScore+" "+lScore+" "+uScore+" "+rScore+" "+dScore+"       "+line;
@@ -1228,14 +1255,26 @@ class Mistake
 	}
 	String getMove()
 	{
-		if (move == 37)
+		if (move == 37 || move == 65)
 			return "Left";
-		if (move == 38)
+		if (move == 38 || move == 87)
 			return "Up";
-		if (move == 39)
+		if (move == 39 || move == 68)
 			return "Right";
-		if (move == 40)
+		if (move == 40 || move == 83)
 			return "Down";
+		return "";
+	}
+	public String getMoveShort()
+	{
+		if (move == 37 || move == 65)
+			return "L";
+		if (move == 38 || move == 87)
+			return "U";
+		if (move == 39 || move == 68)
+			return "R";
+		if (move == 40 || move == 83)
+			return "D";
 		return "";
 	}
 	String getType()
