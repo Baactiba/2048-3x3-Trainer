@@ -50,7 +50,25 @@ class Board extends Canvas implements Runnable
 	Color color = new Color(121, 64, 25);
 	public Board() throws FileNotFoundException
 	{
-		int[] spaces = new int[6]; spaces[0]=1; spaces[1]=1; spaces[2]=0; spaces[3]=1; spaces[4]=1; spaces[5]=3;
+		String sBoard = "";
+		boolean empty = false;
+		try 
+		{
+			sBoard = new Scanner(new File("startpos.txt")).nextLine();
+		} catch (Exception e)
+		{
+			empty = true;
+		}
+		int[] spaces = new int[9];
+		if (!empty)
+			for (int x = 0; x < 9; x++)
+				spaces[x]=sBoard.charAt(x)-48;
+		else
+		{
+			spaces = new int[] {0,0,0,0,0,0,0,0,0};
+			spaces = Space.spawn(spaces);
+			spaces = Space.spawn(spaces);
+		}
 		handler = new Handler();
 		new Window(w, h, "2048 3x3 Trainer", this, color);
 		handler.addObj(new Tile(spaces, ID.Tile));
@@ -171,9 +189,10 @@ abstract class Obj
 	abstract void render(Graphics g);
 	abstract void unRender(Graphics g);
 	static int[] barColor = new int[3];
-	static int[] space = new int[6];
+	static int[] space = new int[9];
 	static ArrayList<Mistake> mistakes = new ArrayList<>();
 	static ArrayList<Mistake> analysis = new ArrayList<>();
+	static ArrayList<Move> analysis2 = new ArrayList<>();
 	static PrintWriter mistakeOut = null;
 	ID id;
 	static int loads = 0;
@@ -250,6 +269,14 @@ abstract class Obj
 				analysis.subList(10, analysis.size()).clear();
 				Collections.reverse(analysis);
 			}
+			analysis2.clear();
+			for (Mistake m:analysis)
+				try {
+					analysis2.add(Input.getMove2(m.getPos()));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			setMenuType(4);
 		}
 		if (!reviewing)
@@ -364,24 +391,32 @@ abstract class Obj
 		Image img = null;
 		try 
 		{
-			img = ImageIO.read(new File(""+(int)(Math.pow(2,val))+".png"));
-		} catch (Exception e) {System.out.println(""+(int)(Math.pow(2, val))+".png");}
+			img = ImageIO.read(new File("Tiles\\"+(int)(Math.pow(2,val))+".png"));
+		} catch (Exception e) {System.out.println("Tiles\\"+(int)(Math.pow(2, val))+".png");}
 		return img;
 	}
-	public static int[] startString()
+	public static int[] startString() throws FileNotFoundException
 	{
-		Scanner fileIn =  null;
+		String sBoard = "";
+		boolean empty = false;
 		try 
 		{
-			fileIn = new Scanner(new File("settings.txt"));
-		} catch (Exception e) {}
-		if (fileIn != null)
-			if (fileIn.hasNext())
-				return interpret(fileIn.next());
-			else
-				return interpret("110113");
+			sBoard = new Scanner(new File("startpos.txt")).nextLine();
+		} catch (Exception e)
+		{
+			empty = true;
+		}
+		int[] spaces = new int[9];
+		if (!empty)
+			for (int x = 0; x < 9; x++)
+				spaces[x]=sBoard.charAt(x)-48;
 		else
-			return interpret("110113");
+		{
+			spaces = new int[] {0,0,0,0,0,0,0,0,0};
+			spaces = Space.spawn(spaces);
+			spaces = Space.spawn(spaces);
+		}
+		return spaces;
 	}
 	public static int[] interpret(String start)
 	{ 
@@ -480,9 +515,9 @@ class Menu extends Obj
 				int[] rSpace = new int[9];
 				for (int x = 0; x < space.length; x++)
 					rSpace[x]=space[x];
-				rSpace[6] = 8;
-				rSpace[7] = 10;
-				rSpace[8] = 9;
+//				rSpace[6] = 8;
+//				rSpace[7] = 10;
+//				rSpace[8] = 9;
 				for (int x = 0; x < rSpace.length; x++)
 				{
 					int val = rSpace[x];
@@ -491,24 +526,27 @@ class Menu extends Obj
 					if (val != 0)
 						img = Tile.getImg(val,128);
 					double xv = 2.2;
-					double yv = 2.2;
+					double yv = 4.2;
 					if (x > 0)
 						xv+=1.0;
 					if (x > 1)
 						xv+=1.0;
 					if (x > 2)
-						yv+=1.0;
-					if (x > 3)
-						yv+=1.0;
-					if (x > 4)
 					{
 						yv-=1.0;
-						xv-=1.0;
+						xv-=2.0;
 					}
+					if (x > 3)
+						xv+=1.0;
+					if (x > 4)
+						xv+=1.0;
 					if (x > 5)
-						xv-=1.0;
+					{
+						yv-=1.0;
+						xv-=2.0;
+					}
 					if (x > 6) 
-						yv+=1.0;
+						xv+=1.0;
 					if (x > 7)
 						xv+=1.0;
 					if (val != 0)
@@ -527,11 +565,16 @@ class Menu extends Obj
 			}
 			else if (menuType == 4)
 			{
-				review(g, analysis);
+				try {
+					review(g, analysis);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 	}
-	static public void review(Graphics g, ArrayList<Mistake> analysis)
+	static public void review(Graphics g, ArrayList<Mistake> analysis) throws IOException
 	{
 		int dimension = (int)(Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.7);
 //		System.out.println(analysis.size());
@@ -546,16 +589,7 @@ class Menu extends Obj
 //			if (place+1 < 5)
 //				System.out.println(place);
 			for (int x = 0; x < 9; x++)
-			{
-				if (x < 6)
 				rSpace[x]=tSpace[x];
-				if (x == 6)
-					rSpace[x]=8;
-				if (x == 7)
-					rSpace[x]=10;
-				if (x == 8)
-					rSpace[x]=9;
-			}
 //			if (place+1 < 5)
 //				System.out.println(place);
 			for (int x = 0; x < rSpace.length; x++)
@@ -566,25 +600,28 @@ class Menu extends Obj
 				if (val != 0)
 					img = Tile.getImg(val,128);
 				double xv = 0.5;
-				double yv = 0.85;
+				double yv = 2.85;
 				g.setFont(new Font("Monospaced", Font.BOLD, 20));
 				if (x > 0)
 					xv+=1.0;
 				if (x > 1)
 					xv+=1.0;
 				if (x > 2)
-					yv+=1.0;
-				if (x > 3)
-					yv+=1.0;
-				if (x > 4)
 				{
 					yv-=1.0;
-					xv-=1.0;
+					xv-=2.0;
 				}
+				if (x > 3)
+					xv+=1.0;
+				if (x > 4)
+					xv+=1.0;
 				if (x > 5)
-					xv-=1.0;
-				if (x > 6)
-					yv+=1.0;
+				{
+					yv-=1.0;
+					xv-=2.0;
+				}
+				if (x > 6) 
+					xv+=1.0;
 				if (x > 7)
 					xv+=1.0;
 				if (val != 0)
@@ -603,7 +640,7 @@ class Menu extends Obj
 				g.setColor(Color.RED);
 				g.drawString("Your move: "+analysis.get(reviewPage).getMoveShort(), dimension/2-61,20);
 				g.setColor(Color.green);
-				g.drawString("Best move/moves: " + Input.getMove(analysis.get(reviewPage).getPos()).getBestMoveShort() , dimension/2-102, 50);
+				g.drawString("Best move/moves: " + (analysis2.get(reviewPage)).getBestMoveShort() , dimension/2-102, 50);
 				g.setColor(Color.orange);
 				g.drawString("Move score: " + String.format("%.3f%%",100*analysis.get(reviewPage).getScore()),dimension/2-105,80);
 			} catch (Exception e) {System.out.println("You suck at something, who knows what");} 
@@ -671,13 +708,13 @@ class Border extends Obj
 		if (disp)
 		{
 			int d = (int)Toolkit.getDefaultToolkit().getScreenSize().getWidth()/12;
-			if (borderColor == 1.0)
+			if (borderColor > 0.999)
 				g.setColor(Color.GREEN);
-			if (borderColor < 1.0)
+			if (borderColor < 0.999)
 				g.setColor(Color.YELLOW);
-			if (borderColor < 0.97)
+			if (borderColor < 0.99)
 				g.setColor(Color.ORANGE);
-			if (borderColor < 0.85)
+			if (borderColor < 0.97)
 				g.setColor(Color.RED);
 			g.fillRect((int)(0.5*d), (int)(0.5*d), 7, (int)(3*d)+7);
 			g.fillRect((int)(1.5*d), (int)(0.5*d), 7, (int)(3*d)+7);
@@ -717,9 +754,9 @@ class Tile extends Obj
 			int[] rSpace = new int[9];
 			for (int x = 0; x < space.length; x++)
 				rSpace[x]=space[x];
-			rSpace[6] = 8;
-			rSpace[7] = 10;
-			rSpace[8] = 9;
+//			rSpace[6] = 8;
+//			rSpace[7] = 10;
+//			rSpace[8] = 9;
 			for (int x = 0; x < rSpace.length; x++)
 			{
 				int val = rSpace[x];
@@ -728,24 +765,27 @@ class Tile extends Obj
 					i = Obj.getImg(val,128);
 				int d = (int)Toolkit.getDefaultToolkit().getScreenSize().getWidth()/12;
 				double xv = 0.5;
-				double yv = 0.5;
+				double yv = 2.5;
 				if (x > 0)
 					xv+=1.0;
 				if (x > 1)
 					xv+=1.0;
 				if (x > 2)
-					yv+=1.0;
-				if (x > 3)
-					yv+=1.0;
-				if (x > 4)
 				{
 					yv-=1.0;
-					xv-=1.0;
+					xv-=2.0;
 				}
+				if (x > 3)
+					xv+=1.0;
+				if (x > 4)
+					xv+=1.0;
 				if (x > 5)
-					xv-=1.0;
-				if (x > 6)
-					yv+=1.0;
+				{
+					yv-=1.0;
+					xv-=2.0;
+				}
+				if (x > 6) 
+					xv+=1.0;
 				if (x > 7)
 					xv+=1.0;
 				if (val != 0)
@@ -764,8 +804,6 @@ enum ID
 }
 class Input extends KeyAdapter
 {
-	int[] space = new int[5];
-	static HashMap<String, Move> moves = new HashMap<>();
 	Handler handler;
 	public Input(Handler handler) throws FileNotFoundException
 	{
@@ -773,20 +811,49 @@ class Input extends KeyAdapter
 		Obj.setMenuType(2);
 		int liner = 0;
 		this.handler = handler;
-		Scanner fileIn = new Scanner(new File("moves.txt"));
+/*		Scanner fileIn = new Scanner(new File("moves.txt"));
 		while (fileIn.hasNext())	
 		{
 			Obj.setLoads(liner++);
 			String line = fileIn.nextLine();
 			moves.put(namer(line), new Move(line));
-		}
+		} */
 		Obj.createPrintWriter();
 		Obj.setMenuType(1);
 		Obj.setDisp();
 	}
-	static public Move getMove(String name)
+	static public Move getMove2(String name) throws IOException
 	{
-		return moves.get(name);
+		long sTime = System.currentTimeMillis();
+		int sum = 0;
+		for (int x = 0; x < 9; x++)
+		{
+			int charAt = name.charAt(x);
+			sum+=Math.pow(2, charAt-48);
+			if (charAt == 48)
+				sum--;
+		}
+		BufferedReader in = new BufferedReader(new FileReader("Tables2\\"+sum+" "+((int)name.charAt(0)-48)+".txt"));
+		String line = "";
+		while ((line = in.readLine()) != null)
+		{
+			boolean going = true;
+			int pos = 1;
+			while (going && pos < 9)
+			{
+				if (line.charAt(pos) == name.charAt(pos));
+				else
+					going = false;
+				pos++;
+			}
+			if (going)
+			{
+				System.out.println("Fetched move in " +(System.currentTimeMillis() - sTime) + " ms.");
+				return new Move(line);
+			}
+		}
+		System.out.println("Fetched move in " +(System.currentTimeMillis() - sTime) + " ms.");
+		return null;
 	}
 	int key;
 	public static String namer(String line)
@@ -795,11 +862,16 @@ class Input extends KeyAdapter
 		return namerIn.next();
 		
 	}
-	public String namer(int[] space)
+	public static String namer(int[] space)
 	{
 		String ret = "";
 		for (int tn:space)
-			ret+=""+tn;
+		{
+			if (tn < 10)
+				ret+=""+tn;
+			else
+				ret+=":";
+		}
 		return ret;
 	}
 	public void keyPressed(KeyEvent e)
@@ -817,7 +889,7 @@ class Input extends KeyAdapter
 					if (key == 37||key == 65)
 						if (space.canMove(0))
 						{
-							score = grade(moves, namer(spaceO), 0);
+							score = grade(namer(spaceO), 0);
 							if (score < 1.1)
 								Obj.addMistake(new Mistake(namer(spaceO),key, score));
 							Obj.setX(space.left());
@@ -826,7 +898,7 @@ class Input extends KeyAdapter
 					if (key == 38 ||key == 87)
 						if (space.canMove(1))
 						{
-							score = grade(moves, namer(spaceO), 1);
+							score = grade(namer(spaceO), 1);
 							if (score < 1.1)
 								Obj.addMistake(new Mistake(namer(spaceO),key, score));
 							Obj.setX(space.up());
@@ -835,7 +907,7 @@ class Input extends KeyAdapter
 					if (key == 39 || key == 68)
 						if (space.canMove(2))
 						{
-							score = grade(moves, namer(spaceO), 2);
+							score = grade(namer(spaceO), 2);
 							if (score < 1.1)
 								Obj.addMistake(new Mistake(namer(spaceO),key, score));
 							Obj.setX(space.right());
@@ -844,7 +916,7 @@ class Input extends KeyAdapter
 					if (key == 40 || key == 83)
 						if (space.canMove(3))
 						{
-							score = grade(moves, namer(spaceO), 3);
+							score = grade(namer(spaceO), 3);
 							if (score < 1.1)
 								Obj.addMistake(new Mistake(namer(spaceO),key, score));
 							Obj.setX(space.down());
@@ -902,9 +974,7 @@ class Input extends KeyAdapter
 		for (int x:space)
 			if (x==0)
 				return;
-		if (space[5]==7)
-			announceDeadGame();
-		if (space[1]!=space[0]&&space[1]!=space[2]&&space[3]!=space[2]&&space[4]!=space[3]&&space[5]!=space[1]&&space[5]!=space[3])
+		if (space[0]!=space[1]&&space[0]!=space[3]&&space[1]!=space[2]&&space[1]!=space[4]&&space[2]!=space[5]&&space[3]!=space[4]&&space[3]!=space[6]&&space[4]!=space[5]&&space[4]!=space[7]&&space[5]!=space[8]&&space[6]!=space[7]&&space[7]!=space[8])
 			announceDeadGame();
 	}
 	public void announceDeadGame()
@@ -912,9 +982,14 @@ class Input extends KeyAdapter
 		System.out.println("Game over.");
 		Obj.setDeadScreen(true);
 	}
-	public double grade(HashMap<String, Move> moves, String name, int i)
+	public static double grade(String name, int i)
 	{
-		Move m = moves.get(name);
+		Move m = null;
+		try {
+			m = Input.getMove2(name);
+		} catch (IOException e) {
+			System.out.println("Failed to get move : " + name);
+		}
 		if (!m.exists)
 			return 2.0;
 		if (m.getBestScore()==0.0)
@@ -925,7 +1000,7 @@ class Input extends KeyAdapter
 }
 class Space
 {
-	int[] space = new int[6];
+	int[] space = new int[9];
 	public Space(int[] space)
 	{
 		this.space = space;
@@ -938,12 +1013,16 @@ class Space
 		Thread.sleep(10);
 		} catch (InterruptedException e) {}
 		Obj.mistakes.clear();
-		return Obj.startString();
+		try {
+			return Obj.startString();
+		} catch (FileNotFoundException e) {
+		}
+		return null;
 	}
 	boolean canMove(int m)
 	{
 		int[] spaceO = space.clone();
-		int[] am = new int[6];
+		int[] am = new int[9];
 		if (m == 0)
 			am = new Space(space.clone()).left();
 		if (m == 1)
@@ -966,13 +1045,29 @@ class Space
 	{
 		final int[] spaceO = space.clone();
 		int[] tlist = new int[3];
+		int[] tlist2 = new int[3];
+		int[] tlist3= new int[3];
 		tlist[0] = space[0];
 		tlist[1] = space[1];
 		tlist[2] = space[2];
 		tlist = merge(tlist);
+		tlist2[0] = space[3];
+		tlist2[1] = space[4];
+		tlist2[2] = space[5];
+		tlist2 = merge(tlist2);
+		tlist3[0] = space[6];
+		tlist3[1] = space[7];
+		tlist3[2] = space[8];
+		tlist3 = merge(tlist3);
 		space[0] = tlist[0];
 		space[1] = tlist[1];
 		space[2] = tlist[2];
+		space[3] = tlist2[0];
+		space[4] = tlist2[1];
+		space[5] = tlist2[2];
+		space[6] = tlist3[0];
+		space[7] = tlist3[1];
+		space[8] = tlist3[2];
 		if (!arrEq(space, spaceO))
 			space = spawn(space);
 //		System.out.println("finished moving");
@@ -982,19 +1077,29 @@ class Space
 	{
 		final int[] spaceO = space.clone();
 		int[] tlist = new int[3];
+		int[] tlist2 = new int[3];
+		int[] tlist3= new int[3];
 		tlist[0] = space[2];
 		tlist[1] = space[1];
 		tlist[2] = space[0];
 		tlist = merge(tlist);
-		space[2] = tlist[0];
-		space[1] = tlist[1];
+		tlist2[0] = space[5];
+		tlist2[1] = space[4];
+		tlist2[2] = space[3];
+		tlist2 = merge(tlist2);
+		tlist3[0] = space[8];
+		tlist3[1] = space[7];
+		tlist3[2] = space[6];
+		tlist3 = merge(tlist3);
 		space[0] = tlist[2];
-		tlist = new int[2];
-		tlist[0] = space[3];
-		tlist[1] = space[5];
-		tlist = merge(tlist);
-		space[3] = tlist[0];
-		space[5] = tlist[1];
+		space[1] = tlist[1];
+		space[2] = tlist[0];
+		space[3] = tlist2[2];
+		space[4] = tlist2[1];
+		space[5] = tlist2[0];
+		space[6] = tlist3[2];
+		space[7] = tlist3[1];
+		space[8] = tlist3[0];
 		if (!arrEq(space, spaceO))
 			space = spawn(space);
 		return space;
@@ -1003,13 +1108,29 @@ class Space
 	{
 		final int[] spaceO = space.clone();
 		int[] tlist = new int[3];
-		tlist[0] = space[4];
+		int[] tlist2 = new int[3];
+		int[] tlist3= new int[3];
+		tlist[0] = space[0];
 		tlist[1] = space[3];
-		tlist[2] = space[2];
+		tlist[2] = space[6];
 		tlist = merge(tlist);
-		space[4] = tlist[0];
+		tlist2[0] = space[1];
+		tlist2[1] = space[4];
+		tlist2[2] = space[7];
+		tlist2 = merge(tlist2);
+		tlist3[0] = space[2];
+		tlist3[1] = space[5];
+		tlist3[2] = space[8];
+		tlist3 = merge(tlist3);
+		space[0] = tlist[0];
+		space[1] = tlist2[0];
+		space[2] = tlist3[0];
 		space[3] = tlist[1];
-		space[2] = tlist[2];
+		space[4] = tlist2[1];
+		space[5] = tlist3[1];
+		space[6] = tlist[2];
+		space[7] = tlist2[2];
+		space[8] = tlist3[2];
 		if (!arrEq(space, spaceO))
 			space = spawn(space);
 		return space;
@@ -1018,19 +1139,29 @@ class Space
 	{
 		final int[] spaceO = space.clone();
 		int[] tlist = new int[3];
-		tlist[0] = space[2];
+		int[] tlist2 = new int[3];
+		int[] tlist3= new int[3];
+		tlist[0] = space[6];
 		tlist[1] = space[3];
-		tlist[2] = space[4];
+		tlist[2] = space[0];
 		tlist = merge(tlist);
-		space[2] = tlist[0];
+		tlist2[0] = space[7];
+		tlist2[1] = space[4];
+		tlist2[2] = space[1];
+		tlist2 = merge(tlist2);
+		tlist3[0] = space[8];
+		tlist3[1] = space[5];
+		tlist3[2] = space[2];
+		tlist3 = merge(tlist3);
+		space[0] = tlist[2];
+		space[1] = tlist2[2];
+		space[2] = tlist3[2];
 		space[3] = tlist[1];
-		space[4] = tlist[2];
-		tlist = new int[2];
-		tlist[0] = space[1];
-		tlist[1] = space[5];
-		tlist = merge(tlist);
-		space[1] = tlist[0];
-		space[5] = tlist[1];
+		space[4] = tlist2[1];
+		space[5] = tlist3[1];
+		space[6] = tlist[0];
+		space[7] = tlist2[0];
+		space[8] = tlist3[0];
 		if (!arrEq(space, spaceO))
 			space = spawn(space);
 		return space;
@@ -1078,7 +1209,7 @@ class Space
 	static public int[] spawn (int[] space)
 	{
 		ArrayList<Integer> empties= new ArrayList<>();
-		for (int x = 0; x < 6; x++)
+		for (int x = 0; x < 9; x++)
 			if (space[x]==0)
 				empties.add(x);
 		if (empties.size()!=0)
@@ -1121,21 +1252,21 @@ class Move
 			{
 				String move = lineIn.next();
 				double mv = lineIn.nextDouble();
-				if (move.equals("R"))
+				if (move.equals("L:"))
 				{
 					lScore = mv;
 				}
-				if (move.equals("L"))
-				{
-					rScore = mv;
-				}
-				if (move.equals("U"))
+				if (move.equals("U:"))
 				{
 					uScore = mv;
 				}
-				if (move.equals("D"))
+				if (move.equals("D:"))
 				{
 					dScore = mv;
+				}
+				if (move.equals("R:"))
+				{
+					rScore = mv;
 				}
 			}
 		}
@@ -1225,8 +1356,8 @@ class Mistake
 	{
 		line = line.trim();
 		Scanner lineIn = new Scanner(line);
-		pos = ""+lineIn.nextInt(); //JESUS FUCKING CHRIST THIS LINE HAS BEEN THE SOURCE OF MY PROBLEMS FOR AN ETERNITY THANK GOD I FOUND IT
-		while (pos.length()<6) // fixes it not fucking working
+		pos = ""+lineIn.next(); //JESUS FUCKING CHRIST THIS LINE HAS BEEN THE SOURCE OF MY PROBLEMS FOR AN ETERNITY THANK GOD I FOUND IT
+		while (pos.length()<9) // fixes it not fucking working
 			pos = ""+0+pos;
 		move = lineIn.nextInt();
 		score = lineIn.nextDouble();
