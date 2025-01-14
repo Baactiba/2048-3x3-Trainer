@@ -22,7 +22,9 @@ W,A,S,D - Maybe make moves? It used to work but I might have broken it.
 Game Review Controls:
 
 Q - Toggle Game Review on. (must be in death screen)
+
 R - Exit Game Review. (resets to new board)
+
 Left arrow/Right arrow - Look at next/previous mistake.
 
 Using startpos.txt: 
