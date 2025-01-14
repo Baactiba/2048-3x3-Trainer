@@ -12,6 +12,10 @@ public class Trainer
 {
 	static public void main (String args[]) throws IOException
 	{
+		for (int x = 0; x < ReplayAnalyzer.EXTENDED.length; x++) {
+			System.out.println("" + (x + 128) + " " + ReplayAnalyzer.EXTENDED[x]);
+			if (ReplayAnalyzer.EXTENDED[x] == '¢') {ReplayAnalyzer.EXTENDED[x] = 'ø';}
+		}
 		Board game = new Board();
 	}
 }
@@ -52,6 +56,10 @@ class Board extends Canvas implements Runnable
 	{
 		String sBoard = "";
 		boolean empty = false;
+		StaticEvaluator.setModel("d4.5");
+		StaticEvaluator.toggleSimple();
+		StaticEvaluator.setSettings(500, 1.5, 1000000, 10000000);
+		StaticEvaluator.setSettings(100);
 		try 
 		{
 			sBoard = new Scanner(new File("startpos.txt")).nextLine();
@@ -61,8 +69,30 @@ class Board extends Canvas implements Runnable
 		}
 		int[] spaces = new int[9];
 		if (!empty)
-			for (int x = 0; x < 9; x++)
-				spaces[x]=sBoard.charAt(x)-48;
+		{
+			if (sBoard.contains("replay_3x3") || sBoard.contains("replay:3x3"))
+			{
+				Obj.fromReplay = true;
+				Obj.replay = sBoard.substring(sBoard.indexOf("3x3") + 3);
+				int charOne = Obj.replay.charAt(0) - 32;
+				int charTwo = Obj.replay.charAt(1) - 32;
+				System.out.println(charOne+" "+charTwo);
+				spaces = new int[] {0,0,0,0,0,0,0,0,0};
+				int charOnePos = charOne % 16;
+				int charTwoPos = charTwo % 16;
+				int c1down = charOnePos % 4;
+				int c1right = charOnePos / 4;
+				int c2down = charTwoPos % 4;
+				int c2right = charTwoPos / 4;
+				spaces[c1right + 3 * (2 - c1down)] = 1 + charOne / 16;
+				spaces[c2right + 3 * (2 - c2down)] = 1 + charTwo / 16;
+				Obj.replay = Obj.replay.substring(2);
+				ReplayAnalyzer.advance();
+			}
+			else
+				for (int x = 0; x < 9; x++)
+					spaces[x] = sBoard.charAt(x) - 48;
+		}
 		else
 		{
 			spaces = new int[] {0,0,0,0,0,0,0,0,0};
@@ -316,6 +346,9 @@ abstract class Obj
 		}
 		return ret;
 	}
+	static boolean solidColor = false;
+	static boolean fromReplay = false;
+	static String replay;
 	public static void setX(int x, int val)
 	{
 		space[x] = val;
@@ -327,6 +360,8 @@ abstract class Obj
 	public static void setBorderColor(double x)
 	{
 		borderColor = x;
+		if (solidColor)
+			borderColor = 2.0;
 	}
 	public static void setMenuType(int menuTypee)
 	{
@@ -392,7 +427,7 @@ abstract class Obj
 		try 
 		{
 			img = ImageIO.read(new File("Tiles\\"+(int)(Math.pow(2,val))+".png"));
-		} catch (Exception e) {System.out.println("Tiles\\"+(int)(Math.pow(2, val))+".png");}
+		} catch (Exception e) {System.out.println("Tiles\\"+(int)(Math.pow(2, val))+".png"); e.printStackTrace();}
 		return img;
 	}
 	public static int[] startString() throws FileNotFoundException
@@ -407,11 +442,15 @@ abstract class Obj
 			empty = true;
 		}
 		int[] spaces = new int[9];
+		System.out.println(Obj.fromReplay);
 		if (!empty)
+		{
 			for (int x = 0; x < 9; x++)
-				spaces[x]=sBoard.charAt(x)-48;
+				spaces[x] = sBoard.charAt(x) - 48;
+		}
 		else
 		{
+			Obj.solidColor = true;
 			spaces = new int[] {0,0,0,0,0,0,0,0,0};
 			spaces = Space.spawn(spaces);
 			spaces = Space.spawn(spaces);
@@ -459,6 +498,8 @@ class Menu extends Obj
 			}
 			else if (menuType == 3)
 			{
+				int curStreak = 0;
+				int bestStreak = 0;
 				g.setColor(Color.RED);
 				g.setFont(new Font("Monospaced", Font.BOLD, 60));
 				g.drawString("Game Over!", (dimension/2)-167, 51);
@@ -467,35 +508,51 @@ class Menu extends Obj
 				int m = 0;
 				int b = 0;
 				double tScore = 0.0;
+				double mScore = 1.0;
 				try
 				{
 					Thread.sleep(10);
 				} catch (InterruptedException e) {}
-				for (Mistake mistake:mistakes)
+				for (Mistake mistake:mistakes) // TODO fix concurrent modification error here
 				{
 					String type = mistake.getType();
 					if (type.equals("Optimal"))
+					{
 						o++;
+						curStreak++;
+						if (curStreak > bestStreak)
+							bestStreak = curStreak;
+					}
 					if (type.equals("Mistake"))
 						m++;
 					if (type.equals("Inaccuracy"))
 						i++;
-					if (type.equals("Blunder"))
+					if (type.equals("Blunder")) {
 						b++;
-					tScore+=mistake.getScore();
+					}
+					if (!type.equals("Optimal"))
+						curStreak = 0;
+					tScore += mistake.getScore();
+					mScore *= mistake.getScore();
 				}
-				tScore/=mistakes.size();
+				tScore/=(mistakes.size());
 				
 				
 				g.setFont(new Font("Monospaced", Font.BOLD, 20));
 				g.setColor(Color.green);
-				g.drawString("Perfects : "+o, 10, 300);
+				g.drawString("Perfect : "+o, 15, 300);
 				g.setColor(Color.yellow);
-				g.drawString("Erratums : "+i, 10, 330);
+				g.drawString("Amazing : "+i, 15, 330);
 				g.setColor(Color.orange); 
-				g.drawString("Mistakes : "+m, 10, 360);
+				g.drawString("Mistake : "+m, 15, 360);
 				g.setColor(Color.red);
-				g.drawString("Blunders : "+b, 10, 390);
+				g.drawString("Blunder : "+b, 15, 390);
+				if (("" + bestStreak).length() == 2)
+					g.setFont(new Font("Monospaced", Font.BOLD, 22));
+				else
+					g.setFont(new Font("Monospaced", Font.BOLD, 21));
+				g.setColor(Color.PINK);
+				g.drawString("Best streak: " + bestStreak, 5, 263);
 				if (tScore == 1)
 					g.setColor(Color.green);
 				if (tScore < 1)
@@ -504,12 +561,16 @@ class Menu extends Obj
 					g.setColor(Color.orange);
 				if (tScore < 0.97)
 					g.setColor(Color.red);
-				String output = String.format("Accuracy:%.5f%%.", tScore*100);
-				if (tScore == 1)
-					output = String.format("Accuracy:%.4f%%.", tScore*100);
-				g.setFont(new Font("Monospaced", Font.BOLD, 20));
-				g.setFont(new Font("Monospaced", Font.BOLD, 40));
-				g.drawString(output, (dimension/2)-213, 100);
+				String output1 = String.format("Avg Accuracy: %.5f%%.", tScore * 100);
+				String output2 = String.format("Combined Accuracy: %.5f%%.", mScore * 100);
+				if (tScore == 1) {
+					output1 = String.format("Accuracy:%.4f%%.", tScore * 100);
+					output2 = String.format("Accuracy:%.4f%%.", mScore * 100);
+				}
+				g.setFont(new Font("Monospaced", Font.BOLD, 35));
+				g.drawString(output1, (dimension/2)-243, 100);
+				g.setFont(new Font("Monospaced", Font.BOLD, 30));
+				g.drawString(output2, (dimension/2)-250, 140);
 				
 
 				int[] rSpace = new int[9];
@@ -518,9 +579,11 @@ class Menu extends Obj
 //				rSpace[6] = 8;
 //				rSpace[7] = 10;
 //				rSpace[8] = 9;
+				int sum = 0;
 				for (int x = 0; x < rSpace.length; x++)
 				{
 					int val = rSpace[x];
+					sum += (int)Math.pow(2, val);
 					int d = (int)Toolkit.getDefaultToolkit().getScreenSize().getWidth()/16;
 					Image img = null;
 					if (val != 0)
@@ -552,6 +615,9 @@ class Menu extends Obj
 					if (val != 0)
 						g.drawImage(img, (int)(xv*d)+10, (int)(yv*d)+7, d-7, d-7,null);
 				}
+				g.setFont(new Font("Monospaced", Font.BOLD, 50));
+				g.setColor(Color.BLACK);
+				g.drawString("Sum: " + sum, (dimension/2) - 118, 190);
 				int d = (int)Toolkit.getDefaultToolkit().getScreenSize().getWidth()/16;
 				g.setColor(new Color(121, 64, 25));
 				g.fillRect((int)(2.2*d+3), (int)(2.2*d), 7, (int)(3*d)+7);
@@ -716,6 +782,8 @@ class Border extends Obj
 				g.setColor(Color.ORANGE);
 			if (borderColor < 0.97)
 				g.setColor(Color.RED);
+			if (Obj.solidColor)
+				g.setColor(Color.MAGENTA);
 			g.fillRect((int)(0.5*d), (int)(0.5*d), 7, (int)(3*d)+7);
 			g.fillRect((int)(1.5*d), (int)(0.5*d), 7, (int)(3*d)+7);
 			g.fillRect((int)(2.5*d), (int)(0.5*d), 7, (int)(3*d)+7);
@@ -808,6 +876,7 @@ class Input extends KeyAdapter
 	public Input(Handler handler) throws FileNotFoundException
 	{
 		Obj.setDisp();
+		System.out.println("Setting menu type.");
 		Obj.setMenuType(2);
 		int liner = 0;
 		this.handler = handler;
@@ -818,8 +887,11 @@ class Input extends KeyAdapter
 			String line = fileIn.nextLine();
 			moves.put(namer(line), new Move(line));
 		} */
+		System.out.println("Creating printwriter.");
 		Obj.createPrintWriter();
+		System.out.println("Setting menu type.");
 		Obj.setMenuType(1);
+		System.out.println("Setting disp.");
 		Obj.setDisp();
 	}
 	static public Move getMove2(String name) throws IOException
@@ -833,7 +905,7 @@ class Input extends KeyAdapter
 			if (charAt == 48)
 				sum--;
 		}
-		BufferedReader in = new BufferedReader(new FileReader("Tables2\\"+sum+" "+((int)name.charAt(0)-48)+".txt"));
+		BufferedReader in = new BufferedReader(new FileReader("Tables\\Tables\\"+sum+" "+((int)name.charAt(0)-48)+".txt"));
 		String line = "";
 		while ((line = in.readLine()) != null)
 		{
@@ -848,11 +920,11 @@ class Input extends KeyAdapter
 			}
 			if (going)
 			{
-				System.out.println("Fetched move in " +(System.currentTimeMillis() - sTime) + " ms.");
+//				System.out.println("Fetched move in " +(System.currentTimeMillis() - sTime) + " ms.");
 				return new Move(line);
 			}
 		}
-		System.out.println("Fetched move in " +(System.currentTimeMillis() - sTime) + " ms.");
+//		System.out.println("Fetched move in " +(System.currentTimeMillis() - sTime) + " ms.");
 		return null;
 	}
 	int key;
@@ -874,6 +946,7 @@ class Input extends KeyAdapter
 		}
 		return ret;
 	}
+	static int gamesToPlay = 1;
 	public void keyPressed(KeyEvent e)
 	{
 		key = e.getKeyCode();
@@ -881,11 +954,184 @@ class Input extends KeyAdapter
 		for (Obj thisObj:handler.objects)
 			if (thisObj.getId()==ID.Tile)
 			{
-				double score = 0.0;
+				double score;
 				Space space = new Space(Obj.getX());
+//				Space.pArr(space.space);
 				int[] spaceO = Obj.getX().clone();
 				if (Obj.getDisp())
 				{
+					if (Obj.fromReplay)
+					{
+						gamesToPlay = 1;
+						fl : while (true) {
+							gl : while (true) {
+								try {
+									Thread.sleep(00);
+								} catch (Exception exception) {}
+                                int move = ReplayAnalyzer.getMove();
+//								System.out.println(move);
+								if (move == -1)
+									break gl;
+//								System.out.println(move);
+								if (space.canMove(move)) {
+									score = grade(namer(spaceO), move - 37);
+									if (score < 1.1)
+										Obj.addMistake(new Mistake(namer(spaceO), move, score));
+									switch (move) {
+										case 37:
+											Obj.setX(space.left());
+											break;
+										case 38:
+											Obj.setX(space.up());
+											break;
+										case 39:
+											Obj.setX(space.right());
+											break;
+										case 40:
+											Obj.setX(space.down());
+											break;
+										default:
+											break;
+									}
+									Obj.setBorderColor(score);
+								}
+								score = 0.0;
+								space = new Space(Obj.getX());
+								int[] space2 = space.space;
+								int zc = 0;
+								for (int i:space2)
+									if (i == 0)
+										zc++;
+								if (zc == 0 && space2[0]!=space2[1]&&space2[0]!=space2[3]&&space2[1]!=space2[2]&&space2[1]!=space2[4]&&space2[2]!=space2[5]&&space2[3]!=space2[4]&&space2[3]!=space2[6]&&space2[4]!=space2[5]&&space2[4]!=space2[7]&&space2[5]!=space2[8]&&space2[6]!=space2[7]&&space2[7]!=space2[8])
+									break fl;
+								spaceO = Obj.getX().clone();
+							}
+							score = 0.0;
+							space = new Space(Obj.getX());
+							spaceO = Obj.getX().clone();
+							gamesToPlay--;
+
+							if (gamesToPlay == 0)
+								break fl;
+						}
+					}
+					if (key == 16) // Shift: Get AI move. This used to be 16
+					{
+						gamesToPlay = 1;
+						fl : while (true) {
+							gl : while (true) {
+								int move = StaticEvaluator.getMoveFromTrainer(space.space);
+								if (move == -1)
+									break gl;
+//								System.out.println(move);
+								if (space.canMove(move)) {
+									score = grade(namer(spaceO), move - 37);
+									System.out.println("Score : " + score);
+									if (score < 1.1)
+										Obj.addMistake(new Mistake(namer(spaceO), move, score));
+									switch (move) {
+										case 37:
+											Obj.setX(space.left());
+											break;
+										case 38:
+											Obj.setX(space.up());
+											break;
+										case 39:
+											Obj.setX(space.right());
+											break;
+										case 40:
+											Obj.setX(space.down());
+											break;
+										default:
+											break;
+									}
+									Obj.setBorderColor(score);
+								}
+								score = 0.0;
+								space = new Space(Obj.getX());
+								spaceO = Obj.getX().clone();
+							}
+//							try {								// Line one to uncomment if inf looping.
+//								Thread.sleep(1000);
+//							} catch (InterruptedException ex) {}
+//							// Auto reset
+//							Obj.resetMistakes();
+//							Obj.setX(space.reset());
+//							if (Obj.getDeadScreen())
+//								Obj.setDeadScreen(false);
+//							Obj.setMenuType(1);
+//							Obj.setBorderColor(1.0);			// Last line.
+							score = 0.0;
+							space = new Space(Obj.getX());
+							spaceO = Obj.getX().clone();
+							gamesToPlay--;
+							if (gamesToPlay == 0)
+								break fl;
+						}
+//						deadgame(Obj.getX());
+					}
+					if (key == 10) // Enter: Get Table move. This used to be 10
+					{
+						startOutput();
+						gamesToPlay = 1;
+						fl : while (true) {
+							gl : while (true) {
+								int move = getMoveFromTables(spaceO);
+								if (move == -1)
+									break gl;
+								int[] space2 = space.space;
+								int zc = 0;
+								for (int i:space2)
+									if (i == 0)
+										zc++;
+								if (zc == 0 && space2[0]!=space2[1]&&space2[0]!=space2[3]&&space2[1]!=space2[2]&&space2[1]!=space2[4]&&space2[2]!=space2[5]&&space2[3]!=space2[4]&&space2[3]!=space2[6]&&space2[4]!=space2[5]&&space2[4]!=space2[7]&&space2[5]!=space2[8]&&space2[6]!=space2[7]&&space2[7]!=space2[8])
+									break gl;
+								if (space.canMove(move)) {
+									switch (move) {
+										case 37:
+											Obj.setX(space.left());
+											break;
+										case 38:
+											Obj.setX(space.up());
+											break;
+										case 39:
+											Obj.setX(space.right());
+											break;
+										case 40:
+											Obj.setX(space.down());
+											break;
+										default:
+											break;
+									}
+								}
+								score = 0.0;
+								space = new Space(Obj.getX());
+								spaceO = Obj.getX().clone();
+								try {
+									Thread.sleep(100);
+								} catch (InterruptedException exception) {}
+							}
+							try {								// Line one to uncomment if inf looping.
+								Thread.sleep(0);
+							} catch (InterruptedException ex) {}
+							// Auto reset
+							Obj.resetMistakes();
+							Obj.setX(space.reset());
+							if (Obj.getDeadScreen())
+								Obj.setDeadScreen(false);
+							Obj.setMenuType(1);
+							Obj.setBorderColor(1.0);			// Last line.
+							score = 0.0;
+							space = new Space(Obj.getX());
+							spaceO = Obj.getX().clone();
+							System.out.println(gamesToPlay--);
+							dataOut.flush();
+							if (gamesToPlay == 0)
+								break fl;
+						}
+						endOutput();
+//						deadgame(Obj.getX());
+					}
 					if (key == 37||key == 65)
 						if (space.canMove(0))
 						{
@@ -922,6 +1168,7 @@ class Input extends KeyAdapter
 							Obj.setX(space.down());
 							Obj.setBorderColor(score);
 						}
+//					System.out.println("Deadgame reached.");
 					deadgame(Obj.getX());
 				}
 				if (Obj.getDisp() || Obj.getDeadScreen())
@@ -969,6 +1216,40 @@ class Input extends KeyAdapter
 				}
 			}
 	}
+	static private PrintWriter dataOut;
+	public static void startOutput()
+	{
+		try {
+			dataOut = new PrintWriter(new File("Boards.txt"));
+		} catch (Exception e) {}
+	}
+	private void endOutput()
+	{
+		try {
+			dataOut.close();
+		} catch (Exception e) {}
+	}
+	public static int getMoveFromTables(int[] space) {
+		String name = namer(space);
+		dataOut.println(name);
+		Move m = null;
+		try {
+			m = Input.getMove2(name);
+		} catch (IOException e) {
+			System.out.println("Failed to get move : " + name);
+		}
+		if (m == null)
+			return -1;
+//		System.out.println(m.getBestMoveShort().charAt(0));
+		return switch (m.getBestMoveShort().charAt(0)) {
+			case 'U' -> 38;
+			case 'L' -> 37;
+			case 'D' -> 40;
+			case 'R' -> 39;
+			default -> -1;
+		};
+	}
+
 	public void deadgame(int[] space)
 	{
 		for (int x:space)
@@ -990,6 +1271,8 @@ class Input extends KeyAdapter
 		} catch (IOException e) {
 			System.out.println("Failed to get move : " + name);
 		}
+		if (m == null)
+			return 2.0;
 		if (!m.exists)
 			return 2.0;
 		if (m.getBestScore()==0.0)
@@ -1000,7 +1283,7 @@ class Input extends KeyAdapter
 }
 class Space
 {
-	int[] space = new int[9];
+	int[] space;
 	public Space(int[] space)
 	{
 		this.space = space;
@@ -1208,6 +1491,14 @@ class Space
 	}
 	static public int[] spawn (int[] space)
 	{
+//		System.out.println("Spawn called");
+		if (Obj.fromReplay)
+		{
+			int pos = ReplayAnalyzer.getX();
+			space[pos] = ReplayAnalyzer.getSpawnValue();
+			ReplayAnalyzer.advance();
+			return space;
+		}
 		ArrayList<Integer> empties= new ArrayList<>();
 		for (int x = 0; x < 9; x++)
 			if (space[x]==0)
@@ -1256,15 +1547,15 @@ class Move
 				{
 					lScore = mv;
 				}
-				if (move.equals("U:"))
+				else if (move.equals("U:"))
 				{
 					uScore = mv;
 				}
-				if (move.equals("D:"))
+				else if (move.equals("D:"))
 				{
 					dScore = mv;
 				}
-				if (move.equals("R:"))
+				else if (move.equals("R:"))
 				{
 					rScore = mv;
 				}
@@ -1320,6 +1611,8 @@ class Move
 	}
 	public String getBestMoveShort() 
 	{
+		if (bScore == 0.0)
+			return "sad";
 		double gScore = lScore;
 		String ret = "";
 		if (uScore > lScore)
@@ -1371,9 +1664,9 @@ class Mistake
 		this.score = score;
 		if (score < 1)
 			type = "Inaccuracy";
-		if (score < 0.97)
+		if (score < 0.995)
 			type = "Mistake";
-		if (score < 0.85)
+		if (score < 0.97)
 			type = "Blunder";
 	}
 	public String toString()
@@ -1416,4 +1709,79 @@ class Mistake
 	{
 		return score;
 	}
+}
+class ReplayAnalyzer
+{
+	static int index = 0;
+	private static int position;
+	private static int spawnValue;
+	private static int move;
+	public static void advance()
+	{
+//		System.out.println(Obj.replay);
+		if (Obj.replay.isEmpty())
+			return;
+		char character = Obj.replay.charAt(0);
+		int move = (int)character;
+		if (move > 127)
+			for (int x = 0; x < EXTENDED.length; x++)
+				if (EXTENDED[x] == character)
+					move = x + 127;
+		int moveOrig = move;
+//		System.out.println("Analyzing " + move);
+		move -= 32;
+		int pos = move % 16;
+		spawnValue = 1 + ((move - pos) % 32) / 16;
+//		System.out.println("Spawn value: " + spawnValue);
+		String moved = "";
+		switch (move / 32) {
+			case 0:
+				moved = "U";
+				ReplayAnalyzer.move = 38;
+				break;
+			case 1:
+				moved = "R";
+				ReplayAnalyzer.move = 39;
+				break;
+			case 2:
+				moved = "D";
+				ReplayAnalyzer.move = 40;
+				break;
+			case 3:
+				moved = "L";
+				ReplayAnalyzer.move = 37;
+				break;
+			default:
+				break;
+		}
+		System.out.println(moved);
+		if (moved.isBlank())
+			System.out.println(character + " " + moveOrig);
+//		System.out.println("Pos (mod) : " + pos);
+		int c1down = pos % 4;
+		int c1right = pos / 4;
+		position = c1right + 3 * (2 - c1down);
+//		System.out.println("Pos (index) : " + pos);
+		Obj.replay = Obj.replay.substring(1);
+	}
+	public static int getX() { return position; }
+	public static int getSpawnValue() { return spawnValue; }
+	public static int getMove() { return move; }
+	public static final char[] EXTENDED = { 0x00C7, 0x00FC, 0x00E9, 0x00E2,
+			0x00E4, 0x00E0, 0x00E5, 0x00E7, 0x00EA, 0x00EB, 0x00E8, 0x00EF,
+			0x00EE, 0x00EC, 0x00C4, 0x00C5, 0x00C9, 0x00E6, 0x00C6, 0x00F4,
+			0x00F6, 0x00F2, 0x00FB, 0x00F9, 0x00FF, 0x00D6, 0x00DC, 0x00A2,
+			0x00A3, 0x00A5, 0x20A7, 0x0192, 0x00E1, 0x00ED, 0x00F3, 0x00FA,
+			0x00F1, 0x00D1, 0x00AA, 0x00BA, 0x00BF, 0x2310, 0x00AC, 0x00BD,
+			0x00BC, 0x00A1, 0x00AB, 0x00BB, 0x2591, 0x2592, 0x2593, 0x2502,
+			0x2524, 0x2561, 0x2562, 0x2556, 0x2555, 0x2563, 0x2551, 0x2557,
+			0x255D, 0x255C, 0x255B, 0x2510, 0x2514, 0x2534, 0x252C, 0x251C,
+			0x2500, 0x253C, 0x255E, 0x255F, 0x255A, 0x2554, 0x2569, 0x2566,
+			0x2560, 0x2550, 0x256C, 0x2567, 0x2568, 0x2564, 0x2565, 0x2559,
+			0x2558, 0x2552, 0x2553, 0x256B, 0x256A, 0x2518, 0x250C, 0x2588,
+			0x2584, 0x258C, 0x2590, 0x2580, 0x03B1, 0x00DF, 0x0393, 0x03C0,
+			0x03A3, 0x03C3, 0x00B5, 0x03C4, 0x03A6, 0x0398, 0x03A9, 0x03B4,
+			0x221E, 0x03C6, 0x03B5, 0x2229, 0x2261, 0x00B1, 0x2265, 0x2264,
+			0x2320, 0x2321, 0x00F7, 0x2248, 0x00B0, 0x2219, 0x00B7, 0x221A,
+			0x207F, 0x00B2, 0x25A0, 0x00A0 };
 }
