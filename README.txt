@@ -4,8 +4,8 @@
 2. Make sure you have the newest version of Java installed.
 3. Open command prompt.
 4. Copy the location of the Trainer folder. It should look something like this: C:\Users\YourUsername\OneDrive\Desktop\Trainer
-5. Type "cd " and then paste.
-6. Type "javac Trainer.java"
+5. Type "cd ", paste the folder address, then enter.
+6. Enter "javac Trainer.java"
 
 Then, you can use "java Trainer" to run. Make sure that you cd to the Trainer folder every time you open command prompt!
 
