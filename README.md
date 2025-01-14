@@ -13,8 +13,11 @@ Then, you can use "java Trainer" to run. Make sure that you cd to the Trainer fo
 Game Controls:
 
 Arrow Keys - Make moves.
+
 W,A,S,D - Maybe make moves? It used to work but I might have broken it.
+
 [Enter] - Let the tables play from position. If you want to adjust the speed, change the number of milliseconds on line 1111.
+
 [Shift] - Allow my AI to play from position. If you want to configure the thinking time, change the number of milliseconds on line 62.
 
 * If tables or AI are playing, you will need to wait for the game to conclude or use Task Manager to close the program. Or do it some other way, but the close button probably won't work.
