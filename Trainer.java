@@ -1,10 +1,14 @@
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import java.io.*;
-import java.util.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferStrategy;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Scanner;
 
 //	   this program is made by Baactiba and may not be republished without permission or credit.
 
@@ -412,9 +416,11 @@ abstract class Obj
 	}
 	public static void addMistake(Mistake m)
 	{
-		mistakes.add(m);
-		if (!m.getType().equals("Optimal"))
+		if (!(m.getPos().contains(":") && m.getPos().contains("9"))) // if not 1k+512
+			mistakes.add(m);
+		if (!m.getType().equals("Optimal")) {
 			mistakeOut.println(m);
+		}
 		mistakeOut.flush();
 	}
 	public static void resetMistakes()
@@ -513,6 +519,7 @@ class Menu extends Obj
 				{
 					Thread.sleep(10);
 				} catch (InterruptedException e) {}
+				int divisor = 0;
 				for (Mistake mistake:mistakes) // TODO fix concurrent modification error here
 				{
 					String type = mistake.getType();
@@ -532,10 +539,14 @@ class Menu extends Obj
 					}
 					if (!type.equals("Optimal"))
 						curStreak = 0;
-					tScore += mistake.getScore();
-					mScore *= mistake.getScore();
+					if (mistake.getScore() > 0)
+					{
+						tScore += mistake.getScore();
+						mScore *= mistake.getScore();
+						divisor++;
+					}
 				}
-				tScore/=(mistakes.size());
+				tScore/=divisor;
 				
 				
 				g.setFont(new Font("Monospaced", Font.BOLD, 20));
@@ -1108,7 +1119,7 @@ class Input extends KeyAdapter
 								space = new Space(Obj.getX());
 								spaceO = Obj.getX().clone();
 								try {
-									Thread.sleep(100);
+									Thread.sleep(1000);
 								} catch (InterruptedException exception) {}
 							}
 							try {								// Line one to uncomment if inf looping.
