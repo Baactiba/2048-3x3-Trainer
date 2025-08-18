@@ -6,15 +6,19 @@
 4. Make sure you have the newest version of Java installed.
 5. Open the Trainer and enjoy (Windows)! If you use Linux, then run the .jar. Dunno how to do that on Linux so good luck. 
 
+
+
 Game Controls:
 
 Arrow Keys - Make moves.
 
 W,A,S,D - Maybe make moves? It used to work but I might have broken it.
 
-[Enter] - Let the tables play from position. If you want to adjust the speed.
+[Enter] - Let the tables play from current position.
 
 K - Instantly kills game. Use this if you meet your table's goal, or the trainer may falsely think your accuracy is garbage.
+
+R - Reset.
 
 * If tables are playing, you will need to wait for the game to conclude or use Task Manager to close the program. Or do it some other way, but the close button probably won't work.
 
