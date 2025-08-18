@@ -4,7 +4,7 @@
 2. Open GeneralizedTablegen and build your selected tables (more info on this later, or just DM me (baactiba on discord) for now if you can't figure it out).
 3. Make sure the tables folder you just made is named "Tables" and is in another folder named "Tables." This outer folder must be in the same directory as the trainer exe or jar.
 4. Make sure you have the newest version of Java installed.
-5. Open the Trainer and enjoy!
+5. Open the Trainer and enjoy (Windows)! If you use Linux, then run the .jar. Dunno how to do that on Linux so good luck. 
 
 Game Controls:
 
