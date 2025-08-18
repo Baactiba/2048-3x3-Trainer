@@ -1,0 +1,2 @@
+TableAutomoveWait = 250
+SpawnAlgorithm = 1

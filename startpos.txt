@@ -1,2 +1,16 @@
-942732221
-942821210
+974651321 Normal 512+256 merge
+000000101 normal startpos
+874651321 512 merge
+984753213 equiv check 2
+982641330 equiv check 1
+641366621
+139906822 Worst possible move in the tables, if you go D
+726373190 Worst position in the tables
+962421210 Oreo's 512+128 merge SP (Stack)
+721630547 no-256 air castle 128+128+64-16
+934123001 nonseq 512+8+16+u16
+983763211 Final 64, 24 sum
+961541220 512+n+32+16 16 in pdf merge (512+128 merge SP pdf)
+981421220 512+256+16
+972232211 Shifted 8 recovery
+982542110 512+n+32+16 16 in pdf merge (unoriented)
