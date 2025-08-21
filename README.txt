@@ -56,3 +56,13 @@ Algorithm 0 (Normal): What you're used to.
 Algorithm 1 (Learny): Gives spawns according to a successful run's chance of having each spawn. Cannot force the player into a 0%.
 Algorithm 2 (BigBrother): Gives you the worst spawn that isn't a 0%.
 Algorithm 3 (TwosOnly): Destroys the universe. Wtf did you think?
+
+
+
+
+Changelog:
+
+GeneralizedTablegen 1.1 - Generalized Tablegen should now work on Linux.
+GeneralizedTablegen 1.101 - Fixed custom tileset not working if the tileset contains 10 (1k).
+
+Trainer 1.1 - Moves more accurate than 1 - (1e-14) are now considered perfect. Fixed moves made past 1k+512 not counting towards streak and accuracy.
