@@ -64,5 +64,7 @@ Changelog:
 
 GeneralizedTablegen 1.1 - Generalized Tablegen should now work on Linux.
 GeneralizedTablegen 1.101 - Fixed custom tileset not working if the tileset contains 10 (1k).
+GeneralizedTablegen 1.2 - Massively increased speed, the ability to use multiple threads, fixed bugs
 
 Trainer 1.1 - Moves more accurate than 1 - (1e-14) are now considered perfect. Fixed moves made past 1k+512 not counting towards streak and accuracy.
+Trainer 1.101 - Dramatically decreased memory usage.
