@@ -16,6 +16,8 @@ W,A,S,D - Maybe make moves? It used to work but I might have broken it.
 
 [Enter] - Let the tables play from current position.
 
+I - Toggle info. This will show you the best move, main line, and move scores.
+
 K - Instantly kills game. Use this if you meet your table's goal, or the trainer may falsely think your accuracy is garbage.
 
 R - Reset.
@@ -68,3 +70,4 @@ GeneralizedTablegen 1.2 - Massively increased speed, the ability to use multiple
 
 Trainer 1.1 - Moves more accurate than 1 - (1e-14) are now considered perfect. Fixed moves made past 1k+512 not counting towards streak and accuracy.
 Trainer 1.101 - Dramatically decreased memory usage.
+Trainer 1.2 - Bug fixes (hopefully), and the option to see move info mid-game.
