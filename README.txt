@@ -1,28 +1,26 @@
 --- How to use 2048 3x3 Trainer by Baactiba ---
 
-1. Download the new .exe (Windows) or .jar (Linux) files from https://drive.google.com/drive/folders/1u37KFfSsL1hwQuKKZ_NHDN9eTB2tFW3_?usp=drive_link
+1. If they weren't included with the release you downloaded, download the new .exe (Windows) or .jar (Linux) files from https://drive.google.com/drive/folders/1u37KFfSsL1hwQuKKZ_NHDN9eTB2tFW3_?usp=drive_link
 2. Open GeneralizedTablegen and build your selected tables (more info on this later, or just DM me (baactiba on discord) for now if you can't figure it out).
 3. Make sure the tables folder you just made is named "Tables" and is in another folder named "Tables." This outer folder must be in the same directory as the trainer exe or jar.
 4. Make sure you have the newest version of Java installed.
 5. Open the Trainer and enjoy (Windows)! If you use Linux, then run the .jar. Dunno how to do that on Linux so good luck. 
 
-
-
 Game Controls:
+
 
 Arrow Keys - Make moves.
 
 W,A,S,D - Maybe make moves? It used to work but I might have broken it.
 
-[Enter] - Let the tables play from current position.
 
-I - Toggle info. This will show you the best move, main line, and move scores.
+[Enter] - Let the tables play from position. If you want to adjust the speed.
+
+* If tables are playing, you will need to wait for the game to conclude or use Task Manager to close the program. Or do it some other way, but the close button probably won't work.
+
 
 K - Instantly kills game. Use this if you meet your table's goal, or the trainer may falsely think your accuracy is garbage.
 
-R - Reset.
-
-* If tables are playing, you will need to wait for the game to conclude or use Task Manager to close the program. Or do it some other way, but the close button probably won't work.
 
 Game Review Controls:
 
@@ -31,6 +29,16 @@ Q - Toggle Game Review on. (must be in death screen)
 R - Exit Game Review. (resets to new board, refreshes start position, and settings)
 
 Left arrow/Right arrow - Look at next/previous mistake.
+
+
+I - Toggle info display. Shows moves and main lines.
+
+
+P - Push the current position onto the top of startpos.txt.
+
+L - Push the last position onto the top of startpos.txt.
+
+O - Pop the current start position out of startpos.txt
 
 
 
@@ -59,15 +67,4 @@ Algorithm 1 (Learny): Gives spawns according to a successful run's chance of hav
 Algorithm 2 (BigBrother): Gives you the worst spawn that isn't a 0%.
 Algorithm 3 (TwosOnly): Destroys the universe. Wtf did you think?
 
-
-
-
-Changelog:
-
-GeneralizedTablegen 1.1 - Generalized Tablegen should now work on Linux.
-GeneralizedTablegen 1.101 - Fixed custom tileset not working if the tileset contains 10 (1k).
-GeneralizedTablegen 1.2 - Massively increased speed, the ability to use multiple threads, fixed bugs
-
-Trainer 1.1 - Moves more accurate than 1 - (1e-14) are now considered perfect. Fixed moves made past 1k+512 not counting towards streak and accuracy.
-Trainer 1.101 - Dramatically decreased memory usage.
-Trainer 1.2 - Bug fixes (hopefully), and the option to see move info mid-game.
+YellowThreshold, OrangeThreshold, RedThreshold: Decimals representing what move accuracy you need to get under for the border to flash a certain color.
