@@ -1,5 +1,6 @@
+Table = Tables
 TableAutomoveWait = 62
-SpawnAlgorithm = 1
+SpawnAlgorithm = 0
 YellowThreshold = 0.999
 OrangeThreshold = 0.995
 RedThreshold = 0.97
