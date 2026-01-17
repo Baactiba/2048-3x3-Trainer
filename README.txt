@@ -2,7 +2,7 @@
 
 1. If they weren't included with the release you downloaded, download the new .exe (Windows) or .jar (Linux) files from https://drive.google.com/drive/folders/1u37KFfSsL1hwQuKKZ_NHDN9eTB2tFW3_?usp=drive_link
 2. Open GeneralizedTablegen and build your selected tables (more info on this later, or just DM me (baactiba on discord) for now if you can't figure it out).
-3. Make sure the tables folder you just made is named "Tables" and is in another folder named "Tables." This outer folder must be in the same directory as the trainer exe or jar.
+3. Make sure the tables folder you just made is named "Tables" and in it are folders with any name. The interior folders are specific tables. This outer folder must be in the same directory as the trainer exe or jar.
 4. Make sure you have the newest version of Java installed.
 5. Open the Trainer and enjoy (Windows)! If you use Linux, then run the .jar. Dunno how to do that on Linux so good luck. 
 
@@ -27,6 +27,8 @@ Game Review Controls:
 Q - Toggle Game Review on. (must be in death screen)
 
 R - Exit Game Review. (resets to new board, refreshes start position, and settings)
+
+P - Push the current mistake's position onto the top of startpos.txt.
 
 Left arrow/Right arrow - Look at next/previous mistake.
 
@@ -58,6 +60,8 @@ Note: If the trainer freezes, then close the trainer (if it won't close, use tas
 Using settings.txt:
 
 Change the values to what you want them to be and then save and then hit R.
+
+Table: The table folder to use. For example, if you have a subfolder of the Tables folder called Tables1536 which contains the 1k+512 tables, do "Table = Tables1536" to select that table.
 
 TableAutomoveWait: The amount of milliseconds between table automoves.
 
