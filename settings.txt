@@ -1,4 +1,5 @@
 Table = Tables
+ReviewSize = 10
 TableAutomoveWait = 62
 SpawnAlgorithm = 0
 YellowThreshold = 0.999
