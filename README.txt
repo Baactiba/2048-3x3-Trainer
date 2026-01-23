@@ -63,6 +63,8 @@ Change the values to what you want them to be and then save and then hit R.
 
 Table: The table folder to use. For example, if you have a subfolder of the Tables folder called Tables1536 which contains the 1k+512 tables, do "Table = Tables1536" to select that table.
 
+ReviewSize: How many of your worst mistakes will be shown in game review.
+
 TableAutomoveWait: The amount of milliseconds between table automoves.
 
 SpawnAlgorithm: spawn algorithm.
