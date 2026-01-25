@@ -124,7 +124,7 @@ class Info
                 case "R" -> 2;
                 default -> 3;
             };
-            if (m.getScore(iDir) >= (m.getBestScore() * (1.0 - MainlineFinder.EPSILON))) {
+            if (m.getScore(iDir) >= (m.getBestScore() * (1.0 - MainlineFinder.EPSILON)) && (m.getTrashScore() <= 1.0 - MainlineFinder.EPSILON || name.isEmpty())) {
                 double parChc = contents.get(b);
                 HashMap<Board3x3, Double> children = b.moveSpawns(iDir, vals);
                 if (children != null)
@@ -182,7 +182,7 @@ class HInfo
             };
             if (m.getBestScore() == 0)
                 return null;
-            if (m.getScore(iDir) >= (m.getBestScore() * (1.0 - MainlineFinder.EPSILON)))
+            if (m.getScore(iDir) >= (m.getBestScore() * (1.0 - MainlineFinder.EPSILON)) && (m.getTrashScore() <= 1.0 - MainlineFinder.EPSILON || name.isEmpty()))
                 childChances.addAll(new HashSet<>(b.moveSpawns(iDir, vals).keySet()));
             else
                 return null;

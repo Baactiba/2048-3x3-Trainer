@@ -624,15 +624,15 @@ class Menu extends Obj
 
 
 				g.setColor(Color.RED);
-				if (mScore >= 0.9000)
+				if (mScore >= 0.8000)
 					g.setColor(Color.ORANGE);
-				if (mScore >= 0.9680)
+				if (mScore >= 0.9500)
 					g.setColor(Color.YELLOW);
-				if (mScore >= 0.9920)
+				if (mScore >= 0.9875)
 					g.setColor(Color.GREEN);
-				if (mScore >= 0.9969)
+				if (mScore >= 0.9957)
 					g.setColor(Color.CYAN);
-				if (mScore >= 0.9988)
+				if (mScore >= 0.9983)
 					g.setColor(new Color(135, 19, 242));
 				String output2 = String.format("Combined Accuracy: %.5f%%.", mScore * 100);
 				g.setFont(new Font("Monospaced", Font.BOLD, 29));
@@ -640,11 +640,11 @@ class Menu extends Obj
 
 
 				g.setColor(Color.RED);
-				if (bestStreak >= 66)
+				if (bestStreak >= 40)
 					g.setColor(Color.ORANGE);
-				if (bestStreak >= 116)
+				if (bestStreak >= 90)
 					g.setColor(Color.YELLOW);
-				if (bestStreak >= 164)
+				if (bestStreak >= 140)
 					g.setColor(Color.GREEN);
 				if (bestStreak >= 185)
 					g.setColor(Color.CYAN);
@@ -655,13 +655,13 @@ class Menu extends Obj
 
 
 				g.setColor(Color.RED);
-				if (perf >= 0.8000)
+				if (perf >= 0.7500)
 					g.setColor(Color.ORANGE);
-				if (perf >= 0.8500)
+				if (perf >= 0.8300)
 					g.setColor(Color.YELLOW);
-				if (perf >= 0.8700)
+				if (perf >= 0.8600)
 					g.setColor(Color.GREEN);
-				if (perf >= 0.8850)
+				if (perf >= 0.8800)
 					g.setColor(Color.CYAN);
 				if (perf >= 0.9000)
 					g.setColor(new Color(135, 19, 242));
