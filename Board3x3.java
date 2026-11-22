@@ -1,15 +1,20 @@
 import com.koloboke.collect.set.LongSet;
 import com.koloboke.collect.set.hash.HashLongSets;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 public class Board3x3 {
 
     public static void main(String[] args) throws IOException {
+
+        Input.settings();
+
+        Board3x3 test = new Board3x3(8,7,1,1,7,1,3,1,0);
+        System.out.println(test);
+        System.out.println(test.optimalChildren(1));
+
+
     }
 
     static final HashMap<Board3x3, Move> stored = new HashMap<>();
@@ -22,7 +27,7 @@ public class Board3x3 {
     static boolean SPECIAL_DEATH = false;
     static int NO_X_GOAL = 8627;
     static int GOAL = 8;
-    static int MAX_LAYER = 160;
+    static int MAX_LAYER = 16000;
 
     long name;
     double finalSuccessRate = -1.0;
@@ -91,6 +96,35 @@ public class Board3x3 {
         return hi;
     }
 
+    public HashSet<Board3x3> optimalChildren(int... spawnValues) {
+        int dir = switch(Input.getMove2(this).getBestMoveShort().charAt(0)) {
+            case 'L' -> 0;
+            case 'U' -> 1;
+            case 'R' -> 2;
+            default -> 3;
+        };
+        return new HashSet<>(moveSpawns(dir, spawnValues).keySet());
+    }
+
+    public HashMap<Board3x3, int[]> childrenMove(int direction, int... vals) {
+
+        HashMap<Board3x3, int[]> hi = new HashMap<>();
+        long merged = merge(direction);
+        if (merged != name) {
+            for (int val : vals) {
+                for (int place = 0; place < 9; place++) {
+                    if ((merged & (0b1111L << (4 * place))) == 0) {
+                        long thing = merged;
+                        thing |= (long) val << (4 * place);
+                        Board3x3 ss = new Board3x3(thing);
+                        hi.put(ss, new int[] {place, val});
+                    }
+                }
+            }
+        }
+        return hi;
+    }
+
     public Set<Long> getChildrenSpawn(int spawnVal) {
         LongSet hi = HashLongSets.newMutableSet();
         for (int x = 0; x < 4; x++) {
@@ -152,9 +186,19 @@ public class Board3x3 {
                 int row1 = (int) ((name & (0b1111L))) + 16 * (int) ((name & (0b1111L << 12)) >> 12) + 256 * (int) ((name & (0b1111L << 24)) >> 24);
                 int row2 = (int) ((name & (0b1111L << 4)) >> 4) + 16 * (int) ((name & (0b1111L << 16)) >> 16) + 256 * (int) ((name & (0b1111L << 28)) >> 28);
                 int row3 = (int) ((name & (0b1111L << 8)) >> 8) + 16 * (int) ((name & (0b1111L << 20)) >> 20) + 256 * (int) ((name & (0b1111L << 32)) >> 32);
-                int[] merge1 = merges[row1];
-                int[] merge2 = merges[row2];
-                int[] merge3 = merges[row3];
+                int[] merge1;
+                int[] merge2;
+                int[] merge3;
+                if (Input.playing6561) {
+                    merge1 = merges6561[row1];
+                    merge2 = merges6561[row2];
+                    merge3 = merges6561[row3];
+                }
+                else {
+                    merge1 = merges[row1];
+                    merge2 = merges[row2];
+                    merge3 = merges[row3];
+                }
                 ret |= (long) merge1[0] << 24;
                 ret |= (long) merge1[1] << 12;
                 ret |= merge1[2];
@@ -170,9 +214,19 @@ public class Board3x3 {
                 int row1 = (int) ((name & (0b1111L << 24)) >> 24) + 16 * (int) ((name & (0b1111L << 12)) >> 12) + 256 * (int) ((name & (0b1111L)));
                 int row2 = (int) ((name & (0b1111L << 28)) >> 28) + 16 * (int) ((name & (0b1111L << 16)) >> 16) + 256 * (int) ((name & (0b1111L << 4)) >> 4);
                 int row3 = (int) ((name & (0b1111L << 32)) >> 32) + 16 * (int) ((name & (0b1111L << 20)) >> 20) + 256 * (int) ((name & (0b1111L << 8)) >> 8);
-                int[] merge1 = merges[row1];
-                int[] merge2 = merges[row2];
-                int[] merge3 = merges[row3];
+                int[] merge1;
+                int[] merge2;
+                int[] merge3;
+                if (Input.playing6561) {
+                    merge1 = merges6561[row1];
+                    merge2 = merges6561[row2];
+                    merge3 = merges6561[row3];
+                }
+                else {
+                    merge1 = merges[row1];
+                    merge2 = merges[row2];
+                    merge3 = merges[row3];
+                }
                 ret |= merge1[0];
                 ret |= (long) merge1[1] << 12;
                 ret |= (long) merge1[2] << 24;
@@ -188,9 +242,19 @@ public class Board3x3 {
                 int row1 = (int) ((name & (0b1111L))) + 16 * (int) ((name & (0b1111L << 4)) >> 4) + 256 * (int) ((name & (0b1111L << 8)) >> 8);
                 int row2 = (int) ((name & (0b1111L << 12)) >> 12) + 16 * (int) ((name & (0b1111L << 16)) >> 16) + 256 * (int) ((name & (0b1111L << 20)) >> 20);
                 int row3 = (int) ((name & (0b1111L << 24)) >> 24) + 16 * (int) ((name & (0b1111L << 28)) >> 28) + 256 * (int) ((name & (0b1111L << 32)) >> 32);
-                int[] merge1 = merges[row1];
-                int[] merge2 = merges[row2];
-                int[] merge3 = merges[row3];
+                int[] merge1;
+                int[] merge2;
+                int[] merge3;
+                if (Input.playing6561) {
+                    merge1 = merges6561[row1];
+                    merge2 = merges6561[row2];
+                    merge3 = merges6561[row3];
+                }
+                else {
+                    merge1 = merges[row1];
+                    merge2 = merges[row2];
+                    merge3 = merges[row3];
+                }
                 ret |= (long) merge1[0] << 8;
                 ret |= (long) merge1[1] << 4;
                 ret |= merge1[2];
@@ -206,9 +270,19 @@ public class Board3x3 {
                 int row1 = (int) ((name & (0b1111L << 8)) >> 8) + 16 * (int) ((name & (0b1111L << 4)) >> 4) + 256 * (int) ((name & (0b1111L)));
                 int row2 = (int) ((name & (0b1111L << 20)) >> 20) + 16 * (int) ((name & (0b1111L << 16)) >> 16) + 256 * (int) ((name & (0b1111L << 12)) >> 12);
                 int row3 = (int) ((name & (0b1111L << 32)) >> 32) + 16 * (int) ((name & (0b1111L << 28)) >> 28) + 256 * (int) ((name & (0b1111L << 24)) >> 24);
-                int[] merge1 = merges[row1];
-                int[] merge2 = merges[row2];
-                int[] merge3 = merges[row3];
+                int[] merge1;
+                int[] merge2;
+                int[] merge3;
+                if (Input.playing6561) {
+                    merge1 = merges6561[row1];
+                    merge2 = merges6561[row2];
+                    merge3 = merges6561[row3];
+                }
+                else {
+                    merge1 = merges[row1];
+                    merge2 = merges[row2];
+                    merge3 = merges[row3];
+                }
                 ret |= merge1[0];
                 ret |= (long) merge1[1] << 4;
                 ret |= (long) merge1[2] << 8;
@@ -231,9 +305,19 @@ public class Board3x3 {
                 int row1 = (int) ((name & (0b1111L))) + 16 * (int) ((name & (0b1111L << 12)) >> 12) + 256 * (int) ((name & (0b1111L << 24)) >> 24);
                 int row2 = (int) ((name & (0b1111L << 4)) >> 4) + 16 * (int) ((name & (0b1111L << 16)) >> 16) + 256 * (int) ((name & (0b1111L << 28)) >> 28);
                 int row3 = (int) ((name & (0b1111L << 8)) >> 8) + 16 * (int) ((name & (0b1111L << 20)) >> 20) + 256 * (int) ((name & (0b1111L << 32)) >> 32);
-                int[] merge1 = merges[row1];
-                int[] merge2 = merges[row2];
-                int[] merge3 = merges[row3];
+                int[] merge1;
+                int[] merge2;
+                int[] merge3;
+                if (Input.playing6561) {
+                    merge1 = merges6561[row1];
+                    merge2 = merges6561[row2];
+                    merge3 = merges6561[row3];
+                }
+                else {
+                    merge1 = merges[row1];
+                    merge2 = merges[row2];
+                    merge3 = merges[row3];
+                }
                 ret |= (long) merge1[0] << 24;
                 ret |= (long) merge1[1] << 12;
                 ret |= merge1[2];
@@ -249,9 +333,19 @@ public class Board3x3 {
                 int row1 = (int) ((name & (0b1111L << 24)) >> 24) + 16 * (int) ((name & (0b1111L << 12)) >> 12) + 256 * (int) ((name & (0b1111L)));
                 int row2 = (int) ((name & (0b1111L << 28)) >> 28) + 16 * (int) ((name & (0b1111L << 16)) >> 16) + 256 * (int) ((name & (0b1111L << 4)) >> 4);
                 int row3 = (int) ((name & (0b1111L << 32)) >> 32) + 16 * (int) ((name & (0b1111L << 20)) >> 20) + 256 * (int) ((name & (0b1111L << 8)) >> 8);
-                int[] merge1 = merges[row1];
-                int[] merge2 = merges[row2];
-                int[] merge3 = merges[row3];
+                int[] merge1;
+                int[] merge2;
+                int[] merge3;
+                if (Input.playing6561) {
+                    merge1 = merges6561[row1];
+                    merge2 = merges6561[row2];
+                    merge3 = merges6561[row3];
+                }
+                else {
+                    merge1 = merges[row1];
+                    merge2 = merges[row2];
+                    merge3 = merges[row3];
+                }
                 ret |= merge1[0];
                 ret |= (long) merge1[1] << 12;
                 ret |= (long) merge1[2] << 24;
@@ -267,9 +361,19 @@ public class Board3x3 {
                 int row1 = (int) ((name & (0b1111L))) + 16 * (int) ((name & (0b1111L << 4)) >> 4) + 256 * (int) ((name & (0b1111L << 8)) >> 8);
                 int row2 = (int) ((name & (0b1111L << 12)) >> 12) + 16 * (int) ((name & (0b1111L << 16)) >> 16) + 256 * (int) ((name & (0b1111L << 20)) >> 20);
                 int row3 = (int) ((name & (0b1111L << 24)) >> 24) + 16 * (int) ((name & (0b1111L << 28)) >> 28) + 256 * (int) ((name & (0b1111L << 32)) >> 32);
-                int[] merge1 = merges[row1];
-                int[] merge2 = merges[row2];
-                int[] merge3 = merges[row3];
+                int[] merge1;
+                int[] merge2;
+                int[] merge3;
+                if (Input.playing6561) {
+                    merge1 = merges6561[row1];
+                    merge2 = merges6561[row2];
+                    merge3 = merges6561[row3];
+                }
+                else {
+                    merge1 = merges[row1];
+                    merge2 = merges[row2];
+                    merge3 = merges[row3];
+                }
                 ret |= (long) merge1[0] << 8;
                 ret |= (long) merge1[1] << 4;
                 ret |= merge1[2];
@@ -285,9 +389,19 @@ public class Board3x3 {
                 int row1 = (int) ((name & (0b1111L << 8)) >> 8) + 16 * (int) ((name & (0b1111L << 4)) >> 4) + 256 * (int) ((name & (0b1111L)));
                 int row2 = (int) ((name & (0b1111L << 20)) >> 20) + 16 * (int) ((name & (0b1111L << 16)) >> 16) + 256 * (int) ((name & (0b1111L << 12)) >> 12);
                 int row3 = (int) ((name & (0b1111L << 32)) >> 32) + 16 * (int) ((name & (0b1111L << 28)) >> 28) + 256 * (int) ((name & (0b1111L << 24)) >> 24);
-                int[] merge1 = merges[row1];
-                int[] merge2 = merges[row2];
-                int[] merge3 = merges[row3];
+                int[] merge1;
+                int[] merge2;
+                int[] merge3;
+                if (Input.playing6561) {
+                    merge1 = merges6561[row1];
+                    merge2 = merges6561[row2];
+                    merge3 = merges6561[row3];
+                }
+                else {
+                    merge1 = merges[row1];
+                    merge2 = merges[row2];
+                    merge3 = merges[row3];
+                }
                 ret |= merge1[0];
                 ret |= (long) merge1[1] << 4;
                 ret |= (long) merge1[2] << 8;
@@ -428,15 +542,26 @@ public class Board3x3 {
                 sum += (int) Math.pow(2, i);
         if (sum / 2 > MAX_LAYER)
             return true;
-        if (getZeroCt() == 0)
-            for (int x = 0; x < 9; x++) {
-                if (x % 3 > 0)
-                    if (tiles[x] == tiles[x - 1])
+        if (getZeroCt() == 0) {
+            if (Input.playing6561) {
+                for (int x = 0; x < 3; x++)
+                    if (tiles[x] != tiles[x + 3] || tiles[x + 3] != tiles[x + 6])
                         return false;
-                if (x > 2)
-                    if (tiles[x] == tiles[x - 3])
+                for (int x = 0; x < 9; x += 3)
+                    if (tiles[x] != tiles[x + 1] || tiles[x + 1] != tiles[x + 2])
                         return false;
+            } else {
+                for (int x = 0; x < 9; x++) {
+                    if (x % 3 > 0)
+                        if (tiles[x] == tiles[x - 1])
+                            return false;
+                    if (x > 2)
+                        if (tiles[x] == tiles[x - 3])
+                            return false;
+                }
             }
+            return true;
+        }
         if (SPECIAL_DEATH) {
 
         }
@@ -459,15 +584,26 @@ public class Board3x3 {
                 sum += (int) Math.pow(2, i);
         if (sum / 2 > MAX_LAYER)
             return true;
-        if (getZeroCt(name) == 0)
-            for (int x = 0; x < 9; x++) {
-                if (x % 3 > 0)
-                    if (tiles[x] == tiles[x - 1])
+        if (getZeroCt(name) == 0) {
+            if (Input.playing6561) {
+                for (int x = 0; x < 3; x++)
+                    if (tiles[x] != tiles[x + 3] || tiles[x + 3] != tiles[x + 6])
                         return false;
-                if (x > 2)
-                    if (tiles[x] == tiles[x - 3])
+                for (int x = 0; x < 9; x += 3)
+                    if (tiles[x] != tiles[x + 1] || tiles[x + 1] != tiles[x + 2])
                         return false;
             }
+            else {
+                for (int x = 0; x < 9; x++) {
+                    if (x % 3 > 0)
+                        if (tiles[x] == tiles[x - 1])
+                            return false;
+                    if (x > 2)
+                        if (tiles[x] == tiles[x - 3])
+                            return false;
+                }
+            }
+        }
         if (SPECIAL_DEATH) {
 
         }
@@ -494,11 +630,24 @@ public class Board3x3 {
         return zeroCt;
     }
 
+    public int getCt(int val) {
+        return getCt(name, val);
+    }
+
+    public static int getCt(long name, int val) {
+        int ct = 0;
+        for (int x = 0; x <= 32; x += 4) {
+            if (((name & (0b1111L << x)) >> x) == val)
+                ct++;
+        }
+        return ct;
+    }
+
     public int getSum() {
         int sum = 0;
         for (int x = 0; x <= 32; x += 4)
-            sum += (int) Math.pow(2, ((name & (0b1111L << x)) >> x));
-        return (sum - getZeroCt()) / 2;
+            sum += (int) Math.pow(Input.playing6561 ? 3 : 2, ((name & (0b1111L << x)) >> x));
+        return (sum - getZeroCt()) / (Input.playing6561 ? 3 : 2);
     }
 
     public long getSmallestSymmetry() {
@@ -512,6 +661,16 @@ public class Board3x3 {
                 minSc = bd;
         }
         return minSc;
+    }
+
+    static public long getLargestSymmetry(long name) {
+        long max = name;
+        for (int x = 0; x < 8; x++) {
+            long l2 = getRotation(name, x);
+            if (l2 > max)
+                max = l2;
+        }
+        return max;
     }
 
     static public long getSmallestSymmetry(long name) {
@@ -539,13 +698,13 @@ public class Board3x3 {
     }
 
     public String toString() {
-        String ret = "";
+        String ret = "\n";
         for (int yCoord = 2; yCoord >= 0; yCoord--) {
             for (int xCoord = 0; xCoord <= 2; xCoord++)
                 ret += ((name >> (4 * (3 * yCoord + xCoord))) % 16) + " ";
             ret += "\n";
         }
-        return ret + finalSuccessRate;
+        return ret + finalSuccessRate + "\n";
     }
 
 
@@ -555,6 +714,7 @@ public class Board3x3 {
 
     static int[][] rotationsToCheck;
     static int[][] merges;
+    static int[][] merges6561;
 
     public static void init() {
         rotationsToCheck = new int[19683][];
@@ -589,6 +749,11 @@ public class Board3x3 {
             for (int y = 0; y < 16; y++)
                 for (int z = 0; z < 16; z++)
                     merges[z + 16 * y + 256 * x] = mergeDown(new int[]{x, y, z});
+        merges6561 = new int[4096][];
+        for (int x = 0; x < 16; x++)
+            for (int y = 0; y < 16; y++)
+                for (int z = 0; z < 16; z++)
+                    merges6561[z + 16 * y + 256 * x] = mergeDown_6561(new int[]{x, y, z});
     }
 
     static public int[] mergeDown(int[] tiles) // Merges the array and returns it. DOES MODIFY THE ARRAY!
@@ -611,6 +776,22 @@ public class Board3x3 {
                     tiles[x] = tiles[x - 1];
                     tiles[x - 1] = 0;
                 }
+        return tiles;
+    }
+
+    static public int[] mergeDown_6561(int[] tiles) // Merges the array and returns it. DOES MODIFY THE ARRAY!
+    {
+        for (int z = 0; z < tiles.length; z++)
+            for (int x = tiles.length - 1; x > 0; x--)
+                if (tiles[x] == 0) {
+                    tiles[x] = tiles[x - 1];
+                    tiles[x - 1] = 0;
+                }
+        if (tiles[1] != 0 && tiles[1] == tiles[0] && tiles[1] == tiles[2]) {
+            tiles[2]++;
+            tiles[1] = 0;
+            tiles[0] = 0;
+        }
         return tiles;
     }
 
