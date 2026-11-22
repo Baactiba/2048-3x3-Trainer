@@ -6,6 +6,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferStrategy;
 import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -15,10 +16,6 @@ import java.util.*;
 public class Trainer
 {
 	static public void main (String args[]) throws IOException, URISyntaxException {
-		for (int x = 0; x < ReplayAnalyzer.EXTENDED.length; x++) {
-//			System.out.println("" + (x + 128) + " " + ReplayAnalyzer.EXTENDED[x]);
-			if (ReplayAnalyzer.EXTENDED[x] == '¢') {ReplayAnalyzer.EXTENDED[x] = 'ø';}
-		}
 		new Board();
 	}
 }
@@ -57,56 +54,7 @@ class Board extends Canvas implements Runnable
 			h = (int)Toolkit.getDefaultToolkit().getScreenSize().getWidth()/3;
 	Color color = new Color(121, 64, 25);
 	public Board() throws FileNotFoundException {
-		String sBoard = "";
-		boolean empty = false;
-
-		try
-		{
-			File jarDir = new File(Trainer.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
-			File settingsFile = new File(jarDir, "startpos.txt");
-			if (!settingsFile.exists())
-				settingsFile = new File("startpos.txt");
-			sBoard = new Scanner(settingsFile).nextLine();
-		} catch (Exception e)
-		{
-			empty = true;
-		}
-		int[] spaces = new int[9];
-		if (!empty)
-		{
-			if (sBoard.contains("replay_3x3") || sBoard.contains("replay:3x3"))
-			{
-				Obj.fromReplay = true;
-				Obj.replay = sBoard.substring(sBoard.indexOf("3x3") + 3);
-				int charOne = Obj.replay.charAt(0) - 32;
-				int charTwo = Obj.replay.charAt(1) - 32;
-				spaces = new int[] {0,0,0,0,0,0,0,0,0};
-				int charOnePos = charOne % 16;
-				int charTwoPos = charTwo % 16;
-				int c1down = charOnePos % 4;
-				int c1right = charOnePos / 4;
-				int c2down = charTwoPos % 4;
-				int c2right = charTwoPos / 4;
-				spaces[c1right + 3 * (2 - c1down)] = 1 + charOne / 16;
-				spaces[c2right + 3 * (2 - c2down)] = 1 + charTwo / 16;
-				Obj.replay = Obj.replay.substring(2);
-				System.out.println("Spawned initial tiles!");
-				ReplayAnalyzer.advance();
-			}
-			else {
-				Obj.fromReplay = false;
-				for (int x = 0; x < 9; x++)
-					spaces[x] = sBoard.charAt(x) - 48;
-			}
-		}
-		else
-		{
-			spaces = new int[] {0,0,0,0,0,0,0,0,0};
-			spaces = Space.spawn(spaces);
-			spaces = Space.spawn(spaces);
-		}
-
-		Input.settings();
+		int[] spaces = Obj.startString();
 
 		handler = new Handler();
 		new Window(w, h, "2048 3x3 Trainer", this, color);
@@ -329,6 +277,7 @@ abstract class Obj
 		{
 			analysis.clear();
 			mainlines.clear();
+			APLs.clear();
 			Obj.setMenuType(3);
 		}
 	}
@@ -341,7 +290,7 @@ abstract class Obj
 			mistakeOut.close();
 			setMenuType(3);
 		}
-		setDisp();
+		disp = !b;
 	}
 	static private ArrayList<Mistake> loadMistakes()
 	{
@@ -444,15 +393,21 @@ abstract class Obj
 		Image img = null;
 		try
 		{
-			img = ImageIO.read(new File("Tiles/"+(int)(Math.pow(2,val))+".png"));
+			img = ImageIO.read(new File("Tiles/"+(int)(Math.pow((Input.playing6561 ? 3 : 2),val))+".png"));
 		} catch (Exception e) {
-			System.out.println("Tiles/"+(int)(Math.pow(2, val))+".png"); e.printStackTrace();
-			System.exit(0);
+			try {
+				img = ImageIO.read(new File("Tiles/" + (int) (Math.pow((Input.playing6561 ? 2 : 3), val)) + ".png"));
+			} catch (Exception _) {}
 		}
 		return img;
 	}
 	public static int[] startString() throws FileNotFoundException
 	{
+		Input.settings();
+		Obj.fromReplay = false;
+		Obj.replay = "";
+		ReplayAnalyzer.reset();
+
 		String sBoard = "";
 		boolean empty = false;
 		try
@@ -461,7 +416,13 @@ abstract class Obj
 			File settingsFile = new File(jarDir, "startpos.txt");
 			if (!settingsFile.exists())
 				settingsFile = new File("startpos.txt");
-			sBoard = new Scanner(settingsFile).nextLine();
+			try (Scanner fileIn = new Scanner(settingsFile, StandardCharsets.UTF_8)) {
+				sBoard = fileIn.nextLine();
+			}
+			if (sBoard.startsWith("\uFEFF"))
+				sBoard = sBoard.substring(1);
+			if (sBoard.trim().isEmpty())
+				empty = true;
 		} catch (Exception e)
 		{
 			empty = true;
@@ -469,28 +430,13 @@ abstract class Obj
 		int[] spaces = new int[9];
 		if (!empty)
 		{
-			if (sBoard.contains("replay_3x3") || sBoard.contains("replay:3x3"))
+			if (ReplayAnalyzer.isReplayLine(sBoard))
 			{
 				Obj.fromReplay = true;
-				Obj.replay = sBoard.substring(sBoard.indexOf("3x3") + 3);
-				int charOne = Obj.replay.charAt(0) - 32;
-				int charTwo = Obj.replay.charAt(1) - 32;
-				spaces = new int[] {0,0,0,0,0,0,0,0,0};
-				int charOnePos = charOne % 16;
-				int charTwoPos = charTwo % 16;
-				int c1down = charOnePos % 4;
-				int c1right = charOnePos / 4;
-				int c2down = charTwoPos % 4;
-				int c2right = charTwoPos / 4;
-				spaces[c1right + 3 * (2 - c1down)] = 1 + charOne / 16;
-				spaces[c2right + 3 * (2 - c2down)] = 1 + charTwo / 16;
-				Obj.replay = Obj.replay.substring(2);
-				ReplayAnalyzer.index = 0;
+				spaces = ReplayAnalyzer.load(sBoard);
 				System.out.println("Spawned initial tiles!");
-				ReplayAnalyzer.advance();
 			}
 			else {
-				Obj.fromReplay = false;
 				for (int x = 0; x < 9; x++)
 					spaces[x] = sBoard.charAt(x) - 48;
 			}
@@ -498,11 +444,14 @@ abstract class Obj
 		else
 		{
 			spaces = new int[] {0,0,0,0,0,0,0,0,0};
+			Space.buildingInitialBoard = true;
 			spaces = Space.spawn(spaces);
 			spaces = Space.spawn(spaces);
+			Space.buildingInitialBoard = false;
 		}
 
-		Input.settings();
+		if (!Obj.fromReplay && Space.poolMode)
+			BoardPoolManager.ensurePool(spaces);
 
 		return spaces;
 	}
@@ -549,9 +498,6 @@ class Menu extends Obj
 			{
 				int curStreak = 0;
 				int bestStreak = 0;
-				g.setColor(Color.pink);
-				g.setFont(new Font("Monospaced", Font.BOLD, 60));
-				g.drawString("Game Over!", (dimension/2)-167, 51);
 				int o = 0;
 				int i = 0;
 				int m = 0;
@@ -589,8 +535,36 @@ class Menu extends Obj
 						}
 					}
 				}
-				tScore/=divisor;
-				double perf = (double) o / (o + i + m + b);
+				tScore = divisor == 0 ? 0.0 : tScore / divisor;
+				int totalMoves = o + i + m + b;
+				double perf = totalMoves == 0 ? 0.0 : (double) o / totalMoves;
+
+				Color avgColor = Multiscore.statColor(tScore, 0.999250, 0.999850, 2);
+				Color streakColor = Multiscore.statColor(bestStreak, 40, 90, 0);
+				Color perfColor = Multiscore.statColor(perf, 0.7500, 0.8300, 1);
+				boolean blackBg = Multiscore.triggersBlackBackground(tScore, bestStreak, perf);
+				boolean crimsonBg = !blackBg && Multiscore.triggersCrimsonBackground(tScore, bestStreak, perf);
+				Color combinedColor = Multiscore.combinedAccuracyColor(mScore, tScore, avgColor, blackBg);
+				if (blackBg) {
+					g.setColor(Color.BLACK);
+					g.fillRect(0, 0, 1000, 1000);
+				} else if (crimsonBg) {
+					g.setColor(Multiscore.CRIMSON_BG);
+					g.fillRect(0, 0, 1000, 1000);
+				}
+
+				String title = blackBg ? "The Human Limit" : (crimsonBg ? "Superhuman" : "Game Over!");
+				int centerWidth = (Window.frame != null && Window.frame.getContentPane().getWidth() > 0)
+						? Window.frame.getContentPane().getWidth()
+						: dimension;
+				int titleFontSize = 60;
+				g.setColor(Color.pink);
+				g.setFont(new Font("Monospaced", Font.BOLD, titleFontSize));
+				while (titleFontSize > 24 && g.getFontMetrics().stringWidth(title) > centerWidth - 16) {
+					titleFontSize -= 2;
+					g.setFont(new Font("Monospaced", Font.BOLD, titleFontSize));
+				}
+				g.drawString(title, (centerWidth - g.getFontMetrics().stringWidth(title)) / 2, 51);
 
 				g.setFont(new Font("Monospaced", Font.BOLD, 20));
 				g.setColor(Color.green);
@@ -601,70 +575,44 @@ class Menu extends Obj
 				g.drawString(String.format("Mistake:%9s", m), 5, 420);
 				g.setColor(Color.red);
 				g.drawString(String.format("Blunder:%9s", b), 5, 450);
+
+				if (Obj.fromReplay) {
+					double[] scores = Multiscore.compute(
+							bestStreak, perf, tScore,
+							ReplayAnalyzer.hasTiming(),
+							ReplayAnalyzer.getTimeMs(),
+							ReplayAnalyzer.getSpawnSum());
+					double colorScore = ReplayAnalyzer.hasTiming() ? scores[4] : scores[4] * (30.0 / 27.0);
+					g.setColor(Multiscore.colorForScore(colorScore));
+					g.setFont(new Font("Monospaced", Font.BOLD, 16));
+					if (ReplayAnalyzer.hasTiming()) {
+						String grade = Multiscore.grade(scores[4]);
+						g.drawString(String.format("Multiscore: %.2f", scores[4]), 5, 315);
+						g.drawString("Grade: " + grade, 5, 336);
+					} else {
+						g.drawString(String.format("Multiscore: %.2f/27", scores[4]), 5, 326);
+					}
+				}
 				if (("" + bestStreak).length() == 2)
 					g.setFont(new Font("Monospaced", Font.BOLD, 22));
 				else
 					g.setFont(new Font("Monospaced", Font.BOLD, 21));
 
-
-				g.setColor(Color.RED);
-				if (tScore >= 0.999250)
-					g.setColor(Color.ORANGE);
-				if (tScore >= 0.999850)
-					g.setColor(Color.YELLOW);
-				if (tScore >= 0.999960)
-					g.setColor(Color.GREEN);
-				if (tScore >= 0.999990)
-					g.setColor(Color.CYAN);
-				if (tScore >= 0.999995)
-					g.setColor(new Color(135, 19, 242));
+				g.setColor(avgColor);
 				String output1 = String.format("Avg Accuracy: %.5f%%.", tScore * 100);
 				g.setFont(new Font("Monospaced", Font.BOLD, 35));
 				g.drawString(output1, 14, 160);
 
-
-				g.setColor(Color.RED);
-				if (mScore >= 0.8000)
-					g.setColor(Color.ORANGE);
-				if (mScore >= 0.9500)
-					g.setColor(Color.YELLOW);
-				if (mScore >= 0.9875)
-					g.setColor(Color.GREEN);
-				if (mScore >= 0.9957)
-					g.setColor(Color.CYAN);
-				if (mScore >= 0.9983)
-					g.setColor(new Color(135, 19, 242));
+				g.setColor(combinedColor);
 				String output2 = String.format("Combined Accuracy: %.5f%%.", mScore * 100);
 				g.setFont(new Font("Monospaced", Font.BOLD, 29));
 				g.drawString(output2, 7, 194);
 
-
-				g.setColor(Color.RED);
-				if (bestStreak >= 40)
-					g.setColor(Color.ORANGE);
-				if (bestStreak >= 90)
-					g.setColor(Color.YELLOW);
-				if (bestStreak >= 140)
-					g.setColor(Color.GREEN);
-				if (bestStreak >= 185)
-					g.setColor(Color.CYAN);
-				if (bestStreak >= 204)
-					g.setColor(new Color(135, 19, 242));
+				g.setColor(streakColor);
 				g.setFont(new Font("Monospaced", Font.BOLD, 20));
 				g.drawString(String.format("Best streak:%5s",bestStreak), 5, 263);
 
-
-				g.setColor(Color.RED);
-				if (perf >= 0.7500)
-					g.setColor(Color.ORANGE);
-				if (perf >= 0.8300)
-					g.setColor(Color.YELLOW);
-				if (perf >= 0.8600)
-					g.setColor(Color.GREEN);
-				if (perf >= 0.8800)
-					g.setColor(Color.CYAN);
-				if (perf >= 0.9000)
-					g.setColor(new Color(135, 19, 242));
+				g.setColor(perfColor);
 				String output3 = String.format("Perfect Percent: %.2f%%.", perf * 100);
 				g.setFont(new Font("Monospaced", Font.BOLD, 15));
 				g.drawString(output3, 3, 291);
@@ -677,7 +625,7 @@ class Menu extends Obj
 				{
 					int val = rSpace[x];
 					if (val != 0)
-						sum += (int)Math.pow(2, val);
+						sum += (int)Math.pow((Input.playing6561 ? 3 : 2), val);
 					int d = (int)Toolkit.getDefaultToolkit().getScreenSize().getWidth() / 16;
 					Image img = null;
 					if (val != 0)
@@ -991,8 +939,10 @@ class Input extends KeyAdapter
 	static RandomAccessFile[] files = new RandomAccessFile[1025];
 	static int tableAutomoveWait = 150;
 	static int replaySize = 10;
+	static boolean playing6561 = false;
 	static boolean displayingInfo = false;
 	static ArrayList<String> info = new ArrayList<>();
+    static double spawnRate = 0.1;
 	static double[] colorThreshold = new double[] {1 - 0.00000000000001, 0.995, 0.97};
 	Handler handler;
 	public Input(Handler handler) {
@@ -1015,6 +965,9 @@ class Input extends KeyAdapter
 		stuffs.setFont(new Font(Font.MONOSPACED, Font.BOLD, 22));
 	}
 
+	static String tableName = "";
+	static File tableDir = null;
+
 	public static void settings() throws FileNotFoundException {
 		File wDir = new File("").getAbsoluteFile();
 		File settingsFile = new File(wDir, "settings.txt");
@@ -1024,7 +977,18 @@ class Input extends KeyAdapter
 
 		fileIn.next();
 		fileIn.next();
-		File child = new File(wDir, "/Tables/" + fileIn.next());
+		tableName = fileIn.next();
+		File child = new File(wDir, "/Tables/" + tableName);
+		tableDir = child;
+		for (int i = 0; i < Input.files.length; i++) {
+			if (Input.files[i] != null) {
+				try {
+					Input.files[i].close();
+				} catch (IOException _) {}
+				Input.files[i] = null;
+			}
+		}
+		stored.clear();
 		for (File f : child.listFiles()) {
 			int layer = Integer.parseInt(f.getName().split("\\.")[0]);
 			Input.files[layer] = new RandomAccessFile(f, "r");
@@ -1042,18 +1006,32 @@ class Input extends KeyAdapter
 		Space.learny = false;
 		Space.bigBrother = false;
 		Space.twosOnly = false;
-		switch (fileIn.nextInt()) {
-			case 1:
+		Space.poolMode = false;
+		Space.poolProb = -1.0;
+		String algToken = fileIn.next();
+		try {
+			switch (Integer.parseInt(algToken)) {
+				case 1:
+					Space.learny = true;
+					break;
+				case 2:
+					Space.bigBrother = true;
+					break;
+				case 3:
+					Space.twosOnly = true;
+					break;
+				default:
+					break;
+			}
+		} catch (NumberFormatException e) {
+			double p = Double.parseDouble(algToken);
+			if (p > 0.0 && p < 1.0) {
+				Space.poolMode = true;
+				Space.poolProb = p;
 				Space.learny = true;
-				break;
-			case 2:
-				Space.bigBrother = true;
-				break;
-			case 3:
-				Space.twosOnly = true;
-				break;
-			default:
-				break;
+			} else if (p >= 1.0) {
+				Space.learny = true;
+			}
 		}
 		fileIn.nextLine();
 		fileIn.next();
@@ -1067,6 +1045,14 @@ class Input extends KeyAdapter
 		fileIn.next();
 		fileIn.next();
 		Input.colorThreshold[2] = fileIn.nextDouble();
+        fileIn.nextLine();
+        fileIn.next();
+        fileIn.next();
+        playing6561 = fileIn.next().equals("6561");
+        fileIn.nextLine();
+        fileIn.next();
+        fileIn.next();
+        spawnRate = fileIn.nextDouble();
 	}
 
 	// Object[][] that contains the layers n shi. Each Object[] is long name, double sr.
@@ -1110,7 +1096,7 @@ class Input extends KeyAdapter
 		hi2.start();
 	} */
 
-	static public Move getMove2(String name)
+	static synchronized public Move getMove2(String name)
 	{
 //		System.out.println("Calling getMove2");
 //		System.out.println(name);
@@ -1120,11 +1106,11 @@ class Input extends KeyAdapter
 			for (int x = 0; x < 9; x++) {
 				int charAt = name.charAt(x);
 				arr[x] = charAt - 48;
-				sum += (int) Math.pow(2, charAt - 48);
+				sum += (int) Math.pow((playing6561 ? 3 : 2), charAt - 48);
 				if (charAt == 48)
 					sum--;
 			}
-			sum /= 2;
+			sum /= (Input.playing6561 ? 3 : 2);
 			Board3x3 thisMove = new Board3x3(arr);
 
 			double[] rates = new double[4];
@@ -1135,14 +1121,14 @@ class Input extends KeyAdapter
 				int zeroCt = new Board3x3(thisMove.merge(mv)).getZeroCt();
 				for (Map.Entry<Long, Integer> entry : children.entrySet())
 					try {
-						double delta = 0.9 / zeroCt * entry.getValue() * (binSearch(files[sum + 1], Board3x3.getSmallestSymmetry(entry.getKey())));
+						double delta = (1 - Input.spawnRate) / zeroCt * entry.getValue() * (binSearch(files[sum + 1], Board3x3.getSmallestSymmetry(entry.getKey())));
 						rates[mv] += delta;
 					} catch (Exception _) { }
 				children = thisMove.getChildren(mv, 2);
 				zeroCt = new Board3x3(thisMove.merge(mv)).getZeroCt();
 				for (Map.Entry<Long, Integer> entry : children.entrySet())
 					try {
-						double delta = 0.1 / zeroCt * entry.getValue() * (binSearch(files[sum + 2], Board3x3.getSmallestSymmetry(entry.getKey())));
+						double delta = Input.spawnRate / zeroCt * entry.getValue() * (binSearch(files[sum + (Input.playing6561 ? 3 : 2)], Board3x3.getSmallestSymmetry(entry.getKey())));
 						rates[mv] += delta;
 					} catch (Exception _) { }
 			}
@@ -1151,7 +1137,7 @@ class Input extends KeyAdapter
 			int sum = 0;
 			for (int x = 0; x < 9; x++) {
 				int charAt = name.charAt(x);
-				sum += (int) Math.pow(2, charAt - 48);
+				sum += (int) Math.pow((Input.playing6561 ? 3 : 2), charAt - 48);
 				if (charAt == 48)
 					sum--;
 			}
@@ -1161,30 +1147,43 @@ class Input extends KeyAdapter
 			return null;
 		}
 	}
+	static final int MAX_SIZE = 100000;
+	static final Object synch = new Exception();
+	static HashMap<Board3x3, Move> stored = new HashMap<>();
 	static public Move getMove2(Board3x3 thisMove) {
-		try {
-			int sum = thisMove.getSum();
-			double[] rates = new double[4];
-			for (int mv = 0; mv < 4; mv++) {
-				Map<Long, Integer> children = thisMove.getChildren(mv, 1);
-				int zeroCt = new Board3x3(thisMove.merge(mv)).getZeroCt();
-				for (Map.Entry<Long, Integer> entry : children.entrySet())
-					try {
-						double delta = 0.9 / zeroCt * entry.getValue() * (binSearch(files[sum + 1], Board3x3.getSmallestSymmetry(entry.getKey())));
-						rates[mv] += delta;
-					} catch (Exception _) { }
-				children = thisMove.getChildren(mv, 2);
-				zeroCt = new Board3x3(thisMove.merge(mv)).getZeroCt();
-				for (Map.Entry<Long, Integer> entry : children.entrySet())
-					try {
-						double delta = 0.1 / zeroCt * entry.getValue() * (binSearch(files[sum + 2], Board3x3.getSmallestSymmetry(entry.getKey())));
-						rates[mv] += delta;
-					} catch (Exception _) { }
+		if (stored.containsKey(thisMove))
+			return stored.get(thisMove);
+		synchronized(synch) {
+			try {
+				int sum = thisMove.getSum();
+				double[] rates = new double[4];
+				for (int mv = 0; mv < 4; mv++) {
+					Map<Long, Integer> children = thisMove.getChildren(mv, 1);
+					int zeroCt = new Board3x3(thisMove.merge(mv)).getZeroCt();
+					for (Map.Entry<Long, Integer> entry : children.entrySet())
+						try {
+							double delta = (1 - Input.spawnRate) / zeroCt * entry.getValue() * (binSearch(files[sum + 1], Board3x3.getSmallestSymmetry(entry.getKey())));
+							rates[mv] += delta;
+						} catch (Exception _) {
+						}
+					children = thisMove.getChildren(mv, 2);
+					zeroCt = new Board3x3(thisMove.merge(mv)).getZeroCt();
+					for (Map.Entry<Long, Integer> entry : children.entrySet())
+						try {
+							double delta = Input.spawnRate / zeroCt * entry.getValue() * (binSearch(files[sum + (playing6561 ? 3 : 2)], Board3x3.getSmallestSymmetry(entry.getKey())));
+							rates[mv] += delta;
+						} catch (Exception _) {
+						}
+				}
+				Move ret = new Move(Input.namer(thisMove.getTiles()), rates);
+				stored.put(thisMove, ret);
+				if (stored.size() > MAX_SIZE)
+					stored.clear();
+				return ret;
+			} catch (Exception e) {
+				System.out.println("Error at getMove() line 1232. " + thisMove);
+				return null;
 			}
-			return new Move(Input.namer(thisMove.getTiles()), rates);
-		} catch (Exception e) {
-			System.out.println("Error at getMove() line 1232. " + thisMove);
-			return null;
 		}
 	}
 	public static double binSearch(RandomAccessFile file, long l) throws IOException {
@@ -1242,33 +1241,22 @@ class Input extends KeyAdapter
 				int[] spaceO = Obj.getX().clone();
                 if (Obj.getDisp())
 				{
-					if (Obj.fromReplay)
+					if (Obj.fromReplay && !ReplayAnalyzer.isFinished() && key != 82 && key != 73 && key != 79 && key != 80 && key != 76)
 					{
 						while (true) {
 							int move = ReplayAnalyzer.getMove();
-							System.out.println("Move made: " + move);
 							if (move == -1)
 								break;
-							System.out.println(move);
+							System.out.println("Move made: " + move);
 							score = grade(namer(Obj.getX()), move - 37);
 							System.out.println("Move score: " + score);
 							if (score < 1.1)
 								Obj.addMistake(new Mistake(namer(Obj.getX()), move, score));
 							switch (move) {
-								case 37:
-									Obj.setX(space.left());
-									break;
-								case 38:
-									Obj.setX(space.up());
-									break;
-								case 39:
-									Obj.setX(space.right());
-									break;
-								case 40:
-									Obj.setX(space.down());
-									break;
-								default:
-									break;
+								case 37 -> Obj.setX(space.left());
+								case 38 -> Obj.setX(space.up());
+								case 39 -> Obj.setX(space.right());
+								case 40 -> Obj.setX(space.down());
 							}
 							Obj.setBorderColor(score);
 							space = new Space(Obj.getX());
@@ -1279,6 +1267,9 @@ class Input extends KeyAdapter
 							}
 							System.out.println(Arrays.toString(Obj.getX()));
 						}
+						deadgame(Obj.getX());
+						if (!Obj.getDeadScreen())
+							announceDeadGame();
 					}
 					else if (key == 10) // Enter: Get Table move. This used to be 10
 					{
@@ -1345,7 +1336,8 @@ class Input extends KeyAdapter
 						endOutput();
 						System.out.println("Deadgame time");
 						System.out.println(Arrays.toString(Obj.getX()));
-						deadgame(Obj.getX());
+						if (!Obj.getDeadScreen())
+							deadgame(Obj.getX());
 					}
 					else if (key == 73) { // i: Toggle displaying info.
 						Input.displayingInfo = !Input.displayingInfo;
@@ -1419,7 +1411,8 @@ class Input extends KeyAdapter
 						}
 					}
 //					System.out.println("Deadgame reached.");
-					deadgame(Obj.getX());
+					if (!Obj.getDeadScreen())
+						deadgame(Obj.getX());
                     try {
                         updateInfo();
                     } catch (IOException ex) {
@@ -1573,7 +1566,10 @@ class Input extends KeyAdapter
 		for (int x:space)
 			if (x==0)
 				return;
-		if (space[0]!=space[1]&&space[0]!=space[3]&&space[1]!=space[2]&&space[1]!=space[4]&&space[2]!=space[5]&&space[3]!=space[4]&&space[3]!=space[6]&&space[4]!=space[5]&&space[4]!=space[7]&&space[5]!=space[8]&&space[6]!=space[7]&&space[7]!=space[8])
+		if (playing6561 && (space[0] != space[1] || space[1] != space[2]) && (space[3] != space[4] || space[4] != space[5]) && (space[6] != space[7] || space[7] != space[8])
+				&& (space[0] != space[3] || space[3] != space[6]) && (space[1] != space[4] || space[4] != space[7]) && (space[2] != space[5] || space[5] != space[8]))
+			announceDeadGame();
+		else if (space[0]!=space[1]&&space[0]!=space[3]&&space[1]!=space[2]&&space[1]!=space[4]&&space[2]!=space[5]&&space[3]!=space[4]&&space[3]!=space[6]&&space[4]!=space[5]&&space[4]!=space[7]&&space[5]!=space[8]&&space[6]!=space[7]&&space[7]!=space[8])
 			announceDeadGame();
 	}
 	public void announceDeadGame()
@@ -1583,7 +1579,7 @@ class Input extends KeyAdapter
 	}
 	public static double grade(String name, int i)
 	{
-		Move m = null;
+		Move m;
         m = Input.getMove2(name);
         if (m == null) {
 			System.out.println("2.0 by null move");
@@ -1597,6 +1593,7 @@ class Input extends KeyAdapter
 			System.out.println("2.0 by doomed position");
 			return 2.0;
 		}
+		System.out.println(m.getScore(i) + " " + m.getBestScore());
 //		System.out.println("Move analysis returning " + m.getScore(i) / m.getBestScore());
 		return m.getScore(i) / m.getBestScore();
 	}
@@ -1911,8 +1908,12 @@ class Space
 		return arr;
 	}
 	boolean dead() {
-		if (emptySpaces().isEmpty())
-            return space[0] != space[1] && space[0] != space[3] && space[1] != space[2] && space[1] != space[4] && space[2] != space[5] && space[3] != space[4] && space[3] != space[6] && space[4] != space[5] && space[4] != space[7] && space[5] != space[8] && space[6] != space[7] && space[7] != space[8];
+		if (emptySpaces().isEmpty()) {
+			if (Input.playing6561 && (space[0] != space[1] && space[1] != space[2]) && (space[3] != space[4] && space[4] != space[5]) && (space[6] != space[7] && space[7] != space[8])
+					&& (space[0] != space[3] && space[3] != space[6]) && (space[1] != space[4] && space[4] != space[7]) && (space[2] != space[5] && space[5] != space[8]))
+				return true;
+			return !Input.playing6561 && space[0] != space[1] && space[0] != space[3] && space[1] != space[2] && space[1] != space[4] && space[2] != space[5] && space[3] != space[4] && space[3] != space[6] && space[4] != space[5] && space[4] != space[7] && space[5] != space[8] && space[6] != space[7] && space[7] != space[8];
+		}
 		return false;
 	}
 	static public boolean arrEq(int[] first, int[] second)
@@ -1939,26 +1940,36 @@ class Space
 					tiles[x]=tiles[x-1];
 					tiles[x-1]=0;
 				}
-		for (int x = tiles.length-1; x > 0; x--)
-			if (tiles[x]!=0)
-				if (tiles[x]==tiles[x-1])
-				{
-					tiles[x-1]=0;
-					tiles[x]++;
-				}
-		for (int z = 0; z < tiles.length; z++)
-			for (int x = tiles.length-1; x > 0; x--)
-				if (tiles[x]==0)
-				{
-					tiles[x]=tiles[x-1];
-					tiles[x-1]=0;
-				}
+		if (Input.playing6561) {
+			if (tiles[1] != 0 && tiles[1] == tiles[0] && tiles[1] == tiles[2]) {
+				tiles[2]++;
+				tiles[1] = 0;
+				tiles[0] = 0;
+			}
+		}
+		else {
+			for (int x = tiles.length - 1; x > 0; x--)
+				if (tiles[x] != 0)
+					if (tiles[x] == tiles[x - 1]) {
+						tiles[x - 1] = 0;
+						tiles[x]++;
+					}
+			for (int z = 0; z < tiles.length; z++)
+				for (int x = tiles.length - 1; x > 0; x--)
+					if (tiles[x] == 0) {
+						tiles[x] = tiles[x - 1];
+						tiles[x - 1] = 0;
+					}
+		}
 		return tiles;
 	}
 	static boolean bigBrother = false; // Evil spawns but never kills the player.
 	static boolean learny = false; 	   // Never gives the player a 0%. Chooses pathways by line chance from successes.
 	static boolean twosOnly = false;
 	static boolean blunderBot = false;
+	static boolean poolMode = false;
+	static double poolProb = -1.0;
+	static boolean buildingInitialBoard = false;
 	static public int[] spawn(int[] space)
 	{
 //		System.out.println("Spawn called");
@@ -1974,6 +1985,8 @@ class Space
 		for (int x = 0; x < 9; x++)
 			if (space[x]==0)
 				empties.add(x);
+		if (poolMode && !buildingInitialBoard && BoardPoolManager.spawnFromPool(space, empties))
+			return space;
 		if (bigBrother) {
 			int[] retSpace = new int[9];
 			boolean satisfied = false;
@@ -2012,7 +2025,7 @@ class Space
                 if (score > 0) {
 					int[] target = new int[9];
 					System.arraycopy(space, 0, target, 0, 9);
-					widths.add(score * empties.size() * 0.9);
+					widths.add(score * empties.size() * (1 - Input.spawnRate));
 					boards.add(target);
 				}
 				space[i] = 2;
@@ -2020,7 +2033,7 @@ class Space
                 if (score > 0) {
 					int[] target = new int[9];
 					System.arraycopy(space, 0, target, 0, 9);
-					widths.add(score * empties.size() * 0.1);
+					widths.add(score * empties.size() * Input.spawnRate);
 					boards.add(target);
 				}
 				space[i] = 0;
@@ -2045,10 +2058,10 @@ class Space
 		{
 			int randInd = (int)(empties.size()*Math.random())+1;
 			randInd = empties.get(randInd-1);
-			int randVal = (int)(10*Math.random());
+			double rand = Math.random();
 			if (twosOnly)
 				space[randInd] = 1;
-			else if (randVal == 5) {
+			else if (rand < Input.spawnRate) {
 				space[randInd] = 2;
 //				GameSimulator.s4++;
 			}
@@ -2117,22 +2130,12 @@ class Move
 			{
 				String move = lineIn.next();
 				double mv = lineIn.nextDouble();
-				if (move.equals("L:"))
-				{
-					lScore = mv;
-				}
-				else if (move.equals("U:"))
-				{
-					uScore = mv;
-				}
-				else if (move.equals("D:"))
-				{
-					dScore = mv;
-				}
-				else if (move.equals("R:"))
-				{
-					rScore = mv;
-				}
+                switch (move) {
+                    case "L:" -> lScore = mv;
+                    case "U:" -> uScore = mv;
+                    case "D:" -> dScore = mv;
+                    case "R:" -> rScore = mv;
+                }
 			}
 		}
 	}
@@ -2327,62 +2330,11 @@ class Mistake
 }
 class ReplayAnalyzer
 {
-	static int index = 0;
-	private static int position;
-	private static int spawnValue;
-	private static int move;
-	public static char currentChar = '0';
-	public static void advance()
-	{
-//		System.out.println(Obj.replay);
-		if (Obj.replay.isEmpty())
-			return;
-		currentChar = Obj.replay.charAt(index++);
-		int move = currentChar;
-		if (move > 127)
-			for (int x = 0; x < EXTENDED.length; x++)
-				if (EXTENDED[x] == currentChar)
-					move = x + 127;
-		int moveOrig = move;
-//		System.out.println("Analyzing " + move);
-		move -= 32;
-		int pos = move % 16;
-		spawnValue = 1 + ((move - pos) % 32) / 16;
-//		System.out.println("Spawn value: " + spawnValue);
-		String moved = "";
-		switch (move / 32) {
-			case 0:
-				moved = "U";
-				ReplayAnalyzer.move = 38;
-				break;
-			case 1:
-				moved = "R";
-				ReplayAnalyzer.move = 39;
-				break;
-			case 2:
-				moved = "D";
-				ReplayAnalyzer.move = 40;
-				break;
-			case 3:
-				moved = "L";
-				ReplayAnalyzer.move = 37;
-				break;
-			default:
-				break;
-		}
-		System.out.println(moved);
-		if (moved.isBlank())
-			System.out.println(currentChar + " " + moveOrig);
-//		System.out.println("Pos (mod) : " + pos);
-		int c1down = pos % 4;
-		int c1right = pos / 4;
-		position = c1right + 3 * (2 - c1down);
-//		System.out.println("Pos (index) : " + pos);
-//		Obj.replay = Obj.replay.substring(1);
-	}
-	public static int getX() { return position; }
-	public static int getSpawnValue() { return spawnValue; }
-	public static int getMove() { return move; }
+	static final String ALPH = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ¤¾";
+	private static final HashMap<Character, Integer> I_LOOKUP = new HashMap<>();
+	private static final int[] TIMEBASE = {0, 256, 1024, 4096, 16384, 65536, 262144, 1048576};
+	private static final int[] TIMERES = {1, 3, 12, 48, 192, 768, 3072, 12288};
+
 	public static final char[] EXTENDED = { 0x00C7, 0x00FC, 0x00E9, 0x00E2,
 			0x00E4, 0x00E0, 0x00E5, 0x00E7, 0x00EA, 0x00EB, 0x00E8, 0x00EF,
 			0x00EE, 0x00EC, 0x00C4, 0x00C5, 0x00C9, 0x00E6, 0x00C6, 0x00F4,
@@ -2400,10 +2352,340 @@ class ReplayAnalyzer
 			0x221E, 0x03C6, 0x03B5, 0x2229, 0x2261, 0x00B1, 0x2265, 0x2264,
 			0x2320, 0x2321, 0x00F7, 0x2248, 0x00B0, 0x2219, 0x00B7, 0x221A,
 			0x207F, 0x00B2, 0x25A0, 0x00A0 };
+	private static final HashMap<Character, Integer> EXTENDED_LOOKUP = new HashMap<>();
+
 	static {
+		for (int x = 0; x < ALPH.length(); x++)
+			I_LOOKUP.put(ALPH.charAt(x), x);
 		EXTENDED[157 - 127] = '×';
 		EXTENDED[156 - 127] = 'Ø';
 		EXTENDED[154 - 127] = 'ø';
 		EXTENDED[152 - 127] = 'Ö';
+		for (int x = 0; x < EXTENDED.length; x++)
+			EXTENDED_LOOKUP.put(EXTENDED[x], x + 127);
+	}
+
+	static class ReplayStep {
+		final int moveKeyCode;
+		final int trainerDir;
+		final int spawnPos;
+		final int spawnVal;
+
+		ReplayStep(int moveKeyCode, int trainerDir, int spawnPos, int spawnVal) {
+			this.moveKeyCode = moveKeyCode;
+			this.trainerDir = trainerDir;
+			this.spawnPos = spawnPos;
+			this.spawnVal = spawnVal;
+		}
+	}
+
+	static class ReplayData {
+		final int[] initialSpaces = new int[9];
+		final ArrayList<ReplayStep> steps = new ArrayList<>();
+		final boolean hasTiming;
+		final int timeMs;
+		final int spawnSum;
+
+		ReplayData(boolean hasTiming, int timeMs, int spawnSum) {
+			this.hasTiming = hasTiming;
+			this.timeMs = timeMs;
+			this.spawnSum = spawnSum;
+		}
+	}
+
+	private static ReplayData currentReplay = null;
+	static int index = 0;
+	private static int position = 0;
+	private static int spawnValue = 0;
+	private static int move = -1;
+
+	public static boolean isLegacyReplay(String line) {
+		return line != null && (line.contains("replay_3x3") || line.contains("replay:3x3"));
+	}
+
+	private static String extractLiveBody(String line) {
+		if (line == null || isLegacyReplay(line))
+			return null;
+		int idx = line.indexOf("3x3");
+		if (idx == -1)
+			return null;
+		if (idx > 0) {
+			char before = line.charAt(idx - 1);
+			if (!Character.isWhitespace(before) && before != '/' && before != ':' && before != '"')
+				return null;
+		}
+		int us = line.indexOf('_', idx + 3);
+		if (us == -1)
+			return null;
+		String variant = line.substring(idx + 3, us);
+		for (int i = 0; i < variant.length(); i++) {
+			char c = variant.charAt(i);
+			if (!Character.isLetterOrDigit(c) && c != '-')
+				return null;
+		}
+		int end = us + 1;
+		while (end < line.length() && !Character.isWhitespace(line.charAt(end)) && line.charAt(end) != '"')
+			end++;
+		String body = line.substring(us + 1, end);
+		if (body.length() < 6 || body.length() % 3 != 0)
+			return null;
+		for (int i = 0; i < body.length(); i++) {
+			if (!I_LOOKUP.containsKey(body.charAt(i)))
+				return null;
+		}
+		return body;
+	}
+
+	public static boolean isLiveAnalyzerReplay(String line) {
+		return extractLiveBody(line) != null;
+	}
+
+	public static boolean isReplayLine(String line) {
+		return isLegacyReplay(line) || isLiveAnalyzerReplay(line);
+	}
+
+	public static ReplayData parse(String line) {
+		String liveBody = extractLiveBody(line);
+		if (liveBody != null)
+			return parseLiveAnalyzer(liveBody);
+		return parseLegacy(line);
+	}
+
+	private static ReplayData parseLiveAnalyzer(String body) {
+		int[] initial = new int[9];
+		ArrayList<ReplayStep> steps = new ArrayList<>();
+		int spawnSum = 0;
+		int timeMs = -4000;
+
+		for (int i = 0; i < body.length(); i += 3) {
+			int val = (I_LOOKUP.get(body.charAt(i)) << 14)
+					| (I_LOOKUP.get(body.charAt(i + 1)) << 7)
+					| I_LOOKUP.get(body.charAt(i + 2));
+			int rawMove = val & 0b11;
+			int rawTile = (val >> 2) & 0b11;
+			int spawnVal = rawTile + 1;
+			int x = (val >> 4) & 0b111;
+			int y = (val >> 7) & 0b111;
+			int pos = 3 * (2 - y) + x;
+			int res = (val >> 10) & 0b111;
+			int t = TIMEBASE[res] + TIMERES[res] * ((val >> 13) & 0xFF);
+
+			spawnSum += 2 << rawTile;
+			timeMs += (t == 4182016) ? 2000 : t;
+
+			if (i < 6) {
+				if (pos >= 0 && pos < 9)
+					initial[pos] = spawnVal;
+			} else {
+				int keyCode;
+				int trainerDir;
+				switch (rawMove) {
+					case 0 -> { keyCode = 38; trainerDir = 1; } // Up
+					case 1 -> { keyCode = 40; trainerDir = 3; } // Down
+					case 2 -> { keyCode = 37; trainerDir = 0; } // Left
+					default -> { keyCode = 39; trainerDir = 2; } // Right
+				}
+				steps.add(new ReplayStep(keyCode, trainerDir, pos, spawnVal));
+			}
+		}
+
+		ReplayData data = new ReplayData(true, timeMs, spawnSum);
+		System.arraycopy(initial, 0, data.initialSpaces, 0, 9);
+		data.steps.addAll(steps);
+		return data;
+	}
+
+	private static ReplayData parseLegacy(String line) {
+		String replay = line.substring(line.indexOf("3x3") + 3);
+		int charOne = replay.charAt(0) - 32;
+		int charTwo = replay.charAt(1) - 32;
+		int charOnePos = charOne % 16;
+		int charTwoPos = charTwo % 16;
+		int val1 = 1 + charOne / 16;
+		int val2 = 1 + charTwo / 16;
+
+		ReplayData data = new ReplayData(false, 0, (1 << val1) + (1 << val2));
+		data.initialSpaces[(charOnePos / 4) + 3 * (2 - (charOnePos % 4))] = val1;
+		data.initialSpaces[(charTwoPos / 4) + 3 * (2 - (charTwoPos % 4))] = val2;
+
+		for (int i = 2; i < replay.length(); i++) {
+			char c = replay.charAt(i);
+			int m = c;
+			if (c > 127) {
+				Integer mapped = EXTENDED_LOOKUP.get(c);
+				if (mapped != null)
+					m = mapped;
+			}
+			m -= 32;
+			int pos = m % 16;
+			int position = (pos / 4) + 3 * (2 - (pos % 4));
+			int spawnVal = 1 + ((m - pos) % 32) / 16;
+			int keyCode;
+			int trainerDir;
+			switch (m / 32) {
+				case 0 -> { keyCode = 38; trainerDir = 1; } // Up
+				case 1 -> { keyCode = 39; trainerDir = 2; } // Right
+				case 2 -> { keyCode = 40; trainerDir = 3; } // Down
+				default -> { keyCode = 37; trainerDir = 0; } // Left
+			}
+			data.steps.add(new ReplayStep(keyCode, trainerDir, position, spawnVal));
+		}
+		return data;
+	}
+
+	public static int[] load(String line) {
+		currentReplay = parse(line);
+		index = 0;
+		move = -1;
+		Obj.replay = line;
+		advance();
+		return currentReplay.initialSpaces.clone();
+	}
+
+	public static void reset() {
+		currentReplay = null;
+		index = 0;
+		position = 0;
+		spawnValue = 0;
+		move = -1;
+	}
+
+	public static void advance() {
+		if (currentReplay == null || index >= currentReplay.steps.size()) {
+			move = -1;
+			return;
+		}
+		ReplayStep step = currentReplay.steps.get(index++);
+		move = step.moveKeyCode;
+		position = step.spawnPos;
+		spawnValue = step.spawnVal;
+	}
+
+	public static boolean isFinished() { return currentReplay == null || move == -1; }
+	public static boolean hasTiming() { return currentReplay != null && currentReplay.hasTiming; }
+	public static int getTimeMs() { return currentReplay == null ? 0 : currentReplay.timeMs; }
+	public static int getSpawnSum() { return currentReplay == null ? 0 : currentReplay.spawnSum; }
+	public static int getX() { return position; }
+	public static int getSpawnValue() { return spawnValue; }
+	public static int getMove() { return move; }
+}
+class Multiscore
+{
+	private static final double[][] BINS = {
+			{13, 17, 27, 90, 158, 186, 203, 225, 290},
+			{0.63, 0.67, 0.73, 0.85, 0.88, 0.895, 0.91, 0.92, 0.93},
+			{0.994, 0.9979, 0.9992, 0.99993, 0.999984, 0.9999925, 0.9999957, 0.9999976, 0.999999}
+	};
+
+	public static double[] compute(int bestStreak, double perf, double avgAcc, boolean hasTiming, int timeMs, int sum) {
+		double[] arr = {bestStreak, perf, avgAcc};
+		double[] ret = new double[5];
+		for (int i = 0; i < 3; i++) {
+			int base = -1;
+			for (int j = 0; j < 9; j++) {
+				if (arr[i] < BINS[i][j]) {
+					base = j;
+					break;
+				}
+			}
+			if (base == 0)
+				ret[i] = 0;
+			else if (base == -1)
+				ret[i] = 9;
+			else {
+				double score0 = BINS[i][base - 1];
+				double score1 = BINS[i][base];
+				ret[i] = base + (arr[i] - score0) / (score1 - score0);
+			}
+		}
+		if (hasTiming) {
+			if (sum >= 1536) {
+				ret[3] = 3;
+			} else {
+				double[] timeStuff = sum >= 1024
+						? new double[] {660000, 480000, 300000}
+						: new double[] {270000, 195000, 120000};
+				int base = -1;
+				for (int i = 0; i < 3; i++) {
+					if (timeStuff[i] <= timeMs) {
+						base = i;
+						break;
+					}
+				}
+				if (base == 0)
+					ret[3] = 0;
+				else if (base == -1)
+					ret[3] = 3;
+				else {
+					double score0 = timeStuff[base - 1];
+					double score1 = timeStuff[base];
+					ret[3] = 1 + base - ((double) timeMs - score1) / (score0 - score1);
+				}
+			}
+		}
+		ret[4] = ret[0] + ret[1] + ret[2] + ret[3];
+		return ret;
+	}
+
+	public static String grade(double score) {
+		if (score < 1) return "F";
+		if (score < 3) return "E";
+		if (score < 5) return "D";
+		if (score < 7) return "C";
+		if (score < 9) return "B";
+		if (score < 12) return "A";
+		if (score < 15) return "S";
+		if (score < 18) return "SS";
+		if (score < 21) return "SSS";
+		return "X";
+	}
+
+	static final Color PURPLE = new Color(135, 19, 242);
+	static final Color GOLD_8PT = new Color(0xB8, 0xB4, 0x95);
+	static final Color CRIMSON_BG = new Color(118, 5, 45); // #bf0848, 38% darker (#76052d)
+
+	public static Color statColor(double val, double orangeThresh, double yellowThresh, int binIndex) {
+		double[] bins = BINS[binIndex];
+		Color c = Color.RED;
+		if (val >= orangeThresh) c = Color.ORANGE;
+		if (val >= yellowThresh) c = Color.YELLOW;
+		if (val >= bins[4]) c = Color.GREEN;  // 5 pts
+		if (val >= bins[5]) c = Color.CYAN;   // 6 pts
+		if (val >= bins[6]) c = PURPLE;       // 7 pts
+		if (val >= bins[7]) c = GOLD_8PT;     // 8 pts (#b8b495)
+		if (val >= bins[8]) c = Color.WHITE;  // 9 pts
+		return c;
+	}
+
+	public static Color combinedAccuracyColor(double mScore, double avgAcc, Color avgColor, boolean blackBg) {
+		Color c = Color.RED;
+		if (mScore >= 0.8000) c = Color.ORANGE;
+		if (mScore >= 0.9500) c = Color.YELLOW;
+		if (mScore >= 0.9875) c = Color.GREEN;
+		if (mScore >= 0.9957) c = Color.CYAN;
+		if (mScore >= 0.9983) return (avgAcc >= BINS[2][7]) ? avgColor : PURPLE;
+		return blackBg ? PURPLE : c;
+	}
+
+	public static boolean triggersCrimsonBackground(double avgAcc, int bestStreak, double perf) {
+		return avgAcc >= BINS[2][7] || bestStreak >= BINS[0][7] || perf >= BINS[1][7];
+	}
+
+	public static boolean triggersBlackBackground(double avgAcc, int bestStreak, double perf) {
+		boolean has9pt = avgAcc >= BINS[2][8] || bestStreak >= BINS[0][8] || perf >= BINS[1][8];
+		boolean allPurplePlus = avgAcc >= BINS[2][6] && bestStreak >= BINS[0][6] && perf >= BINS[1][6];
+		return has9pt && allPurplePlus;
+	}
+
+	public static Color colorForScore(double score) {
+		Color c = Color.RED;
+		if (score >= 7) c = Color.ORANGE;
+		if (score >= 12) c = Color.YELLOW;
+		if (score >= 15) c = Color.GREEN;
+		if (score >= 18) c = Color.CYAN;
+		if (score >= 21) c = PURPLE;
+		if (score >= 24) c = GOLD_8PT;
+		if (score >= 27) c = Color.WHITE;
+		return c;
 	}
 }
