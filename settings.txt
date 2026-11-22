@@ -1,7 +1,9 @@
-Table = Tables
+Table = Tables486
 ReviewSize = 10
-TableAutomoveWait = 62
-SpawnAlgorithm = 0
-YellowThreshold = 0.999
-OrangeThreshold = 0.995
-RedThreshold = 0.97
+TableAutomoveWait = 50
+SpawnAlgorithm = 0.0000001
+YellowThreshold = 0.99999999998
+OrangeThreshold = 0.9992
+RedThreshold = 0.995
+RuleSet = 6561
+SpawnRate = 0.1
